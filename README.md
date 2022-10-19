@@ -1,11 +1,12 @@
 # Dronesystem
 P1 Project
+Comtek 154 - C2-207
 
 
-
-### Add Changes
-### Commit
-### Push
-
-####Emergency landing code
+In order to contribute with git
+* Pick a branch
+* Write your change
+* Commit
+* Push
+* Merge with main
 
