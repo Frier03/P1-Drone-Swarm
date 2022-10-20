@@ -5,8 +5,13 @@ from time import sleep
 import re           #Regex
 
 
-defaultWifi = "eduroam"
-wifiProfileFolder = "wifi_profiles"
+
+def getCurrentWifi():
+    wifi = subprocess.check_output("netsh wlan show interfaces")
+    wifi = wifi.decode('utf-8').replace(" \r","")
+    currentWifi = re.findall(r"(?:Profile *: )(.*)\n", wifi)
+    return currentWifi[0]
+
 
 def connectWifi(SSID):
     name = SSID
@@ -34,7 +39,7 @@ def waitForConnection():
 
 def getWifiNetworks():
     # using the check_output() for having the network term retrieval
-    wifisRaw = subprocess.check_output(['netsh','wlan','show','network'])
+    wifisRaw = subprocess.check_output("netsh wlan show network")
 
     wifisRaw = wifisRaw.decode('utf-8').replace("\r","")    #ascii giver fejl?
 
@@ -43,69 +48,120 @@ def getWifiNetworks():
 
     return wifiList
 
-
-def connectToNewWifi(ssid, key):
+def generateProfile(ssid, key=None):
     hex = ssid.encode("utf-8").hex()
-    profileXML = """<?xml version="1.0"?>
+    if key == None:
+        print("Generating profile for open network (no key)")
+        profile = """<?xml version="1.0"?>
 <WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
-	<name>""" + ssid + """</name>
-	<SSIDConfig>
-		<SSID>
-			<hex>""" + hex + """</hex>
-			<name>""" + ssid + """</name>
-		</SSID>
-	</SSIDConfig>
-	<connectionType>ESS</connectionType>
-	<connectionMode>auto</connectionMode>
-	<MSM>
-		<security>
-			<authEncryption>
-				<authentication>WPA2PSK</authentication>
-				<encryption>AES</encryption>
-				<useOneX>false</useOneX>
-			</authEncryption>
-			<sharedKey>
-				<keyType>passPhrase</keyType>
-				<protected>false</protected>
-				<keyMaterial>""" + key + """</keyMaterial>
-			</sharedKey>
-		</security>
-	</MSM>
-	<MacRandomization xmlns="http://www.microsoft.com/networking/WLAN/profile/v3">
-		<enableRandomization>false</enableRandomization>
-	</MacRandomization>
+    <name>""" + ssid + """</name>
+    <SSIDConfig>
+        <SSID>
+            <hex>""" + hex + """</hex>
+            <name>""" + ssid + """</name>
+        </SSID>
+    </SSIDConfig>
+    <connectionType>ESS</connectionType>
+    <connectionMode>manual</connectionMode>
+    <MSM>
+        <security>
+            <authEncryption>
+                <authentication>open</authentication>
+                <encryption>none</encryption>
+                <useOneX>false</useOneX>
+            </authEncryption>
+        </security>
+    </MSM>
+    <MacRandomization xmlns="http://www.microsoft.com/networking/WLAN/profile/v3">
+        <enableRandomization>false</enableRandomization>
+    </MacRandomization>
 </WLANProfile>
-"""
-    if not os.path.exists(wifiProfileFolder):
-        os.makedirs(wifiProfileFolder)
+    """
+    else:
+        print("Generating profile for closed network (with key)")
+
+        profile = """<?xml version="1.0"?>
+        <WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
+            <name>""" + ssid + """</name>
+            <SSIDConfig>
+                <SSID>
+                    <hex>""" + hex + """</hex>
+                    <name>""" + ssid + """</name>
+                </SSID>
+            </SSIDConfig>
+            <connectionType>ESS</connectionType>
+            <connectionMode>auto</connectionMode>
+            <MSM>
+                <security>
+                    <authEncryption>
+                        <authentication>WPA2PSK</authentication>
+                        <encryption>AES</encryption>
+                        <useOneX>false</useOneX>
+                    </authEncryption>
+                    <sharedKey>
+                        <keyType>passPhrase</keyType>
+                        <protected>false</protected>
+                        <keyMaterial>""" + key + """</keyMaterial>
+                    </sharedKey>
+                </security>
+            </MSM>
+            <MacRandomization xmlns="http://www.microsoft.com/networking/WLAN/profile/v3">
+                <enableRandomization>false</enableRandomization>
+            </MacRandomization>
+        </WLANProfile>
+        """
+    return profile
+
+
+def connectToNewWifi(ssid, key=None):
+    if not os.path.exists(wifi_profile_folder):
+        os.makedirs(wifi_profile_folder)
     
-    d = wifiProfileFolder + "\\" + ssid + ".xml"
+    fileName = wifi_profile_folder + "\\" + ssid + ".xml"
+    if not os.path.isfile(fileName):
+        print("[!] Generating new profile for", ssid)
+        
+        profile = generateProfile(ssid, key)
 
-    with open(d, "w") as f:
-        f.write(profileXML)
-        f.close()
+        with open(fileName, "w") as f:
+            f.write(profile)
+            f.close()
+    else:
+        print("[!] Profile already exists for", ssid)
 
-    command = r"netsh wlan add profile filename=" + d
+
+    command = r"netsh wlan add profile filename=" + fileName
     resp = subprocess.run(command, capture_output=True)
     connectWifi(ssid)
 
 
 
 
+
+
+
+defaultWifi = "eduroam"
+wifi_profile_folder = "wifi_profiles"
+
+#The wifi to connect back to
+defaultWifi = getCurrentWifi()
+print("Default wifi set to", defaultWifi)
+
+#(I DONT KNOW WHY) Makes other wifi's visible only if disconnected first
 disconnectWifi()
-sleep(0)
+sleep(0.5)
 
 wNetworks = getWifiNetworks()
 print(len(wNetworks), "networks found!")
 for w in wNetworks:
-    if "Net420" in w:            #Ændres til "Tello Drone" bla bla
-        print("     Wifi SSID:", w)
-        connectToNewWifi(w, "Wilback123")
+    if "bbb" in w:            #Ændres til "Tello Drone" bla bla
+        print("---> Found matching SSID:", w)
+        connectToNewWifi(w)
         waitForConnection()
 
 sleep(5)
-print("Connecting back to " + defaultWifi)
-connectWifi(defaultWifi)        #Er asynkron desværre!?
+print("Connecting back to default wifi " + defaultWifi)
+connectWifi(defaultWifi)
 waitForConnection()
 
 
