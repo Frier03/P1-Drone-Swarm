@@ -5,8 +5,6 @@ import requests as r
 from time import sleep
 import re           #Regex
 
-from netsh_api import *
-
 defaultWifi = "Tello"
 
 def main(args = None) -> None:
@@ -14,6 +12,8 @@ def main(args = None) -> None:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"]) # Download packages from requirements.txt
     except subprocess.CalledProcessError as e:
         pass
+
+    os.system('cls')
 
     # Disconnect from current wifi connection
     disconnectWifi()
