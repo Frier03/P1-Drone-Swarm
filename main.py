@@ -8,13 +8,7 @@ import re           #Regex
 defaultWifi = "Tello"
 
 def main(args = None) -> None:
-    try:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"]) # Download packages from requirements.txt
-    except subprocess.CalledProcessError as e:
-        pass
-
     os.system('cls')
-
     # Disconnect from current wifi connection
     disconnectWifi()
 
@@ -118,5 +112,3 @@ def connectToNewWifi():
 
 if __name__ == '__main__':
     main()
-
-#pip install -U -i  https://pypi.org/simple package
