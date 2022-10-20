@@ -5,8 +5,13 @@ from time import sleep
 import re           #Regex
 
 
-defaultWifi = "eduroam"
-wifiProfileFolder = "wifi_profiles"
+
+def getCurrentWifi():
+    wifi = subprocess.check_output(['netsh', 'WLAN', 'show', 'interfaces'])
+    wifi = wifi.decode('utf-8').replace(" \r","")
+    currentWifi = re.findall(r"(?:Profile *: )(.*)\n", wifi)
+    return currentWifi[0]
+
 
 def connectWifi(SSID):
     name = SSID
@@ -45,8 +50,14 @@ def getWifiNetworks():
 
 
 def connectToNewWifi(ssid, key):
-    hex = ssid.encode("utf-8").hex()
-    profileXML = """<?xml version="1.0"?>
+    if not os.path.exists(wifiProfileFolder):
+        os.makedirs(wifiProfileFolder)
+    
+    fileName = wifiProfileFolder + "\\" + ssid + ".xml"
+    if not os.path.isfile(fileName):
+        print("[!] Generating new profile for", ssid)
+        hex = ssid.encode("utf-8").hex()
+        profileXML = """<?xml version="1.0"?>
 <WLANProfile xmlns="http://www.microsoft.com/networking/WLAN/profile/v1">
 	<name>""" + ssid + """</name>
 	<SSIDConfig>
@@ -76,36 +87,40 @@ def connectToNewWifi(ssid, key):
 	</MacRandomization>
 </WLANProfile>
 """
-    if not os.path.exists(wifiProfileFolder):
-        os.makedirs(wifiProfileFolder)
-    
-    d = wifiProfileFolder + "\\" + ssid + ".xml"
+        with open(fileName, "w") as f:
+            f.write(profileXML)
+            f.close()
+    else:
+        print("[!] Profile already exists for", ssid)
 
-    with open(d, "w") as f:
-        f.write(profileXML)
-        f.close()
 
-    command = r"netsh wlan add profile filename=" + d
+    command = r"netsh wlan add profile filename=" + fileName
     resp = subprocess.run(command, capture_output=True)
     connectWifi(ssid)
 
 
+defaultWifi = "eduroam"
+wifiProfileFolder = "wifi_profiles"
 
+#The wifi to connect back to
+defaultWifi = getCurrentWifi()
+print("Default wifi set to", defaultWifi)
 
+#(I DONT KNOW WHY) Makes other wifi's visible
 disconnectWifi()
-sleep(0)
+sleep(0.5)
 
 wNetworks = getWifiNetworks()
 print(len(wNetworks), "networks found!")
 for w in wNetworks:
-    if "Net420" in w:            #Ændres til "Tello Drone" bla bla
-        print("     Wifi SSID:", w)
-        connectToNewWifi(w, "Wilback123")
+    if "P10" in w:            #Ændres til "Tello Drone" bla bla
+        print("---> Found matching SSID:", w)
+        connectToNewWifi(w, "mechabad")
         waitForConnection()
 
 sleep(5)
-print("Connecting back to " + defaultWifi)
-connectWifi(defaultWifi)        #Er asynkron desværre!?
+print("Connecting back to default wifi " + defaultWifi)
+connectWifi(defaultWifi)
 waitForConnection()
 
 
