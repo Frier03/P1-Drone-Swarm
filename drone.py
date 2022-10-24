@@ -1,7 +1,8 @@
-class Drone():
-    def __init__(self, drone: object):
-        #self.example = example
-        self.drone = drone
+class Drone:
+    def __init__(self) -> None:
+        pass
 
-    def __call__(self, SSID):
-        return SSID
+
+
+    def updatePosition():
+        pass

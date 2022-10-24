@@ -1,0 +1,9 @@
+{
+    "Drone_AV1":
+        {
+            "SPD(m)": 10,
+            "ALT(m/s)": 182,
+            "Signal(%)": 88,
+            "Battery(%)": 30
+        }
+}
