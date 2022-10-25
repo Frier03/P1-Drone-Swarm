@@ -14,8 +14,10 @@ class App:
         """Initialize pygame and the application."""
         self.backgroundColor = (102,102,102) # gray dark background
         pygame.init()
+        self.screenWidth = 1200
+        self.screenHeight = 800
 
-        App.screen = pygame.display.set_mode((1200, 800))
+        App.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight))
         pygame.display.set_caption('Drone Fleet-Management Software')
         aau_img = pygame.image.load('aau.png').convert()
         pygame.display.set_icon(aau_img)
@@ -48,7 +50,7 @@ class App:
         self.updateBackground()
 
         # Render Map
-        self.interface.render_map(self, screen=App.screen)
+        self.interface.render_map(self, screen=App.screen, screenDimensions = (self.screenWidth, self.screenHeight))
 
         while App.running:
 
