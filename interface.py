@@ -1,4 +1,3 @@
-from cv2 import threshold
 import pygame
 class Interface:
 
