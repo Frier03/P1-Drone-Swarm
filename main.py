@@ -46,15 +46,21 @@ class App:
 
     def run(self):
         """Run the main event loop."""
-        # Update screen background
-        self.updateBackground()
 
-        # Render Map
-        self.interface.render_map(self, screen=App.screen, screenDimensions = (self.screenWidth, self.screenHeight))
+        x, y = (0, 0)
+        for i in range(20):
+            # Update screen background
+            self.updateBackground()
+            # Render Map
+            self.interface.render_map(self, screen=App.screen, screenDimensions = (self.screenWidth, self.screenHeight))
 
-        self.interface.set_point(self, coordinates=(15, 88), screen=App.screen)
+            self.interface.set_point(self, coordinates=(x, y), screen=App.screen)
+
+            x+=10
+            y+=5
+            sleep(1)
+
         while App.running:
-
             for event in pygame.event.get():
                 if event.type == QUIT:
                     App.running = False
