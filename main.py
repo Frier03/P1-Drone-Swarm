@@ -52,6 +52,7 @@ class App:
         # Render Map
         self.interface.render_map(self, screen=App.screen, screenDimensions = (self.screenWidth, self.screenHeight))
 
+        self.interface.set_point(self, coordinates=(15, 88), screen=App.screen)
         while App.running:
 
             for event in pygame.event.get():

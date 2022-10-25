@@ -23,11 +23,13 @@ class Interface:
         # Calculate the 0,0 position of the map to the end points based on the mapStartpoint X + mapwidth (also for the Y)
         raw_coordinates_x = (mapStartpointX, mapStartpointX + (mapW + fieldSize)) # x1, x2: top left corner to top right corner coordinates
         raw_coordinates_y = (mapStartpointX, mapStartpointY + (mapH + fieldSize)) # y1, y2: bottom left corner to bottom right corner
-        threshold = mapStartpointX # Use threshold when we have to convert our drone data coordinates to our grid
+        self.threshold_x = mapStartpointX # Use threshold when we have to convert our drone data coordinates to our grid
+        self.threshold_y = mapStartpointY # Use threshold when we have to convert our drone data coordinates to our grid
         # We use converted_coordinates_x/y to check for out of bounds coordinates
         converted_coordinates_x = (0, raw_coordinates_x[1] - raw_coordinates_x[0])
         converted_coordinates_y = (0, raw_coordinates_y[1] - raw_coordinates_y[0])
         print(converted_coordinates_x, converted_coordinates_y)
+        print(f'If the position from the drone is: (15, 88) then it would be converted to: ({15 + self.threshold_x}, {88 + self.threshold_y})')
 
         # Calculate the relative mapW and mapH to the mapStartpointX and mapStartpointY
         mapW = mapW + mapStartpointX
@@ -58,3 +60,9 @@ class Interface:
 
     def get_render_map_axis(self):
         return self.render_map_axis
+
+    def set_point(self, coordinates=(None, None), screen=None):
+        pygame.draw.circle(screen, (0, 150, 0), (coordinates[0] + self.threshold_x, coordinates[1] + self.threshold_y), 5)
+        
+        # Update screen
+        pygame.display.update()
