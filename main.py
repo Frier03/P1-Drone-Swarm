@@ -48,7 +48,7 @@ class App:
         self.updateBackground()
 
         # Render Map
-        self.interface.render_map(pygame=pygame, screen=App.screen)
+        self.interface.render_map(self, screen=App.screen)
 
         while App.running:
 

@@ -1,36 +1,42 @@
-
 import pygame
 class Interface:
 
-    def render_map(fieldSize = 40, mapDimensions = (850, 650), pygame = None, screen = None) -> None:
+    def render_map(self, fieldSize = 50, mapDimensionW = 400, screen = None) -> None:
         """Create grid and make map"""
-        pointX = None
-        pointY = None
-        pointSubX = None
 
-        mapX, mapY = mapDimensions
-        #300, 200
-        mapStartpointX, mapStartpointY = (300, 200)
+        mapW = mapDimensionW
+
+        # Calculate the relative mapH from the mapW.
+        mapH = mapW
+
+        mapStartpointX, mapStartpointY = (500, 300)
+
+        # Calculate the relative mapW and mapH to the mapStartpointX and mapStartpointY
+        mapW = mapW + mapStartpointX
+        mapH = mapH + mapStartpointY
+
         fieldColor = (107,107,107)
+
         # Create grid
-        for x in range(mapStartpointX, mapX, fieldSize):
-            for y in range(mapStartpointY, mapY, fieldSize):
+        for x in range(mapStartpointX, mapW+1, fieldSize):
+            for y in range(mapStartpointY, mapH+1, fieldSize):
                 mapField = pygame.Rect(x, y, fieldSize, fieldSize)
                 pygame.draw.rect(screen, fieldColor, mapField, 1)
 
-                if x == 580:
-                    pointX = x
-                    pygame.draw.circle(screen,(0, 0, 0),(x,mapStartpointY),2) # DRAW CIRCLE
-                elif x == 300 and y == 440:
-                    pointY = y
-                    pointSubX = x
-                    pygame.draw.circle(screen,(0, 0, 0),(x,y),2) # DRAW CIRCLE
+        # Calculate mid point
+        mid_x_coordinate = (mapStartpointX + mapW) // 2 + (fieldSize / 2)
+        mid_y_coordinate = (mapStartpointY + mapH) // 2 + (fieldSize / 2)
 
         # Create outline for X
-        pygame.draw.line(screen, (0, 150 ,0), (pointX, mapStartpointY), (pointX, mapY + (fieldSize-10)), 2)
+        pygame.draw.line(screen, (0, 150 ,0), (mid_x_coordinate, mapStartpointY), (mid_x_coordinate, mapH + fieldSize), 2)
         # Create outline for Y
-        pygame.draw.line(screen, (0, 150, 0), (pointSubX, pointY), (mapX + 10, pointY), 2)
+        pygame.draw.line(screen, (0, 150, 0), (mapStartpointX, mid_y_coordinate), (mapW + fieldSize, mid_y_coordinate), 2)
 
-        # Update
+        # Set self render_map axis
+        self.render_map_axis = ((mapStartpointX, mapStartpointY), (mapW + fieldSize, mapH + fieldSize)) 
+
+        # Update screen
         pygame.display.update()
 
+    def get_render_map_axis(self):
+        return self.render_map_axis
