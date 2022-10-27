@@ -50,17 +50,22 @@ class App:
     def run(self):
         """Run the main event loop."""
 
-        # get x, y coordinates from drone
-        x, y = (50, 50)
-        drone_id = "Drone_AV1"
-        self.fieldSize = 100
+        drone_1 = "Drone_AV1"
+        drone_2 = "Drone_AV2"
+        drone_3 = "Drone_AV3"
+        self.fieldSize = 50
 
-        # Update map
-        self.updateMap(coordinates=(x, y), drone_id=drone_id, fieldSize=self.fieldSize)
+        # Update map for drone_1
+        self.updateMap(coordinates=(93, 48), drone_id=drone_1, fieldSize=self.fieldSize)
+
+        # Update map for drone_2
+        self.updateMap(coordinates=(167, 203), drone_id=drone_2, fieldSize=self.fieldSize)
+
+        # Update map for drone_3
+        self.updateMap(coordinates=(0, 0), drone_id=drone_3, fieldSize=self.fieldSize)
 
         while App.running:
             for event in pygame.event.get():
-                # We use self to access other classes in our eventhandler
                 EventHandler.handler(self, event)
 
                 if event.type == QUIT:
@@ -70,7 +75,7 @@ class App:
                 
         pygame.quit()
 
-    def updateMap(self, coordinates=None, drone_id=None, fieldSize=None):
+    def updateMap(self, coordinates=(None, None), drone_id=None, fieldSize=None):
         # Update screen background
         self.updateBackground()
 

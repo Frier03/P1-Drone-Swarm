@@ -1,4 +1,4 @@
-import pygame, json
+import pygame, json, time
 
 
 class Interface:
@@ -22,7 +22,7 @@ class Interface:
         mid = (abs(screenDimensions[0] - mapW) // 2, abs(screenDimensions[1] - mapH) // 2)
 
         # Set the position of the map from optional variables
-        mapStartpointX, mapStartpointY = bottom_right
+        mapStartpointX, mapStartpointY = mid
 
         # Create class variables
         self.mapWidth = mapW
@@ -89,60 +89,63 @@ class Interface:
 
     def updatePoint(self, coordinates=(None, None), drone_id=None, screen=None, showSPD=True, showALT=True, showBAT=False, showSIG=False):
         if drone_id != None and coordinates != (None, None):
-            # Calculate if the circle is out of bounds from the map
-            droneX, droneY = coordinates
-            droneX += self.threshold_x
-            droneY += self.threshold_y
 
+            # Get drone information from drone_id
+            with open('drone_data.json', 'r') as fh:
+                drone_data = json.load(fh)
 
-            textContent = []
-            self.droneCoords = (droneX, droneY)
+                #----------try to change-----------------
+                for key, value in drone_data.items():
+                    if key == drone_id:
+                        drone_data[drone_id]['POS_X'] = coordinates[0]
+                        drone_data[drone_id]['POS_Y'] = coordinates[1]
+                        droneX          =       drone_data[key]['POS_X']
+                        droneY          =       drone_data[key]['POS_Y']
+                    else:
+                        droneX          =       drone_data[key]['POS_X']
+                        droneY          =       drone_data[key]['POS_Y']
 
-            # Make functions to get data from drone_id
-            drone_data = open('drone_data.json')
-            # Return json object as a dict
-            data = json.load(drone_data)
-            if showSPD:
-                textContent.append('SPD(m/s): ' + str(data[drone_id]['SPD(m/s)']))
-            if showALT:
-                textContent.append('ALT(m/s): ' + str(data[drone_id]['ALT(m/s)']))
-            if showBAT:
-                textContent.append('Battery: ' + str(data[drone_id]['Battery(%)']))
-            if showSIG:
-                textContent.append('Signal: ' + str(data[drone_id]['Signal']))
-            drone_data.close()
-     
-            if droneX >= self.mapX and droneX <= self.mapX + self.mapWidth:
-                if droneY >= self.mapY and droneY <= self.mapY + self.mapHeight:
-                    #print('drone is inside the radar!')
-                    pygame.draw.circle(screen, (255, 22, 12), (droneX, droneY), self.droneSize)
+                    # Calculate if the updated drone is out of bounds from the map
+                    droneX += self.threshold_x
+                    droneY += self.threshold_y
 
-            # Create text on the circle
-            # Default font
-            font = pygame.font.SysFont("Helvetica.ttf", self.textSize-2)
+                    textContent = []
+                    self.droneCoords = (droneX, droneY)
 
-            text_y = self.textSize
-            for i in range(len(textContent)):
-                # Render text
-                text = font.render(textContent[i], True, (255, 255, 255))
+                    textContent.append('SPD(m/s): ' + str(drone_data[key]['SPD(m/s)']))
+                    textContent.append('ALT(m/s): ' + str(drone_data[key]['ALT(m/s)']))
+            
+                    if droneX >= self.mapX and droneX <= self.mapX + self.mapWidth*2:
+                        if droneY >= self.mapY and droneY <= self.mapY + self.mapHeight*2:
+                            #print('drone is inside the radar!')
+                            pygame.draw.circle(screen, (255, 22, 12), (droneX, droneY), self.droneSize)
 
-                # text surface object
-                textRect = text.get_rect()
+                    # Create text on the circle
+                    # Default font
+                    font = pygame.font.SysFont("Helvetica.ttf", self.textSize-2)
 
-                # set text slighty under drone
-                textRect.center = (droneX, droneY+text_y)
+                    text_y = self.textSize
 
-                # copying the text surface objects
-                # to the display surface objects
-                # at the center coordinate.
-                screen.blit(text, textRect)
+                    for i in range(len(textContent)):
+                        # Render text
+                        text = font.render(textContent[i], True, (255, 255, 255))
 
-                text_y += self.textSize-self.droneSize
+                        # text surface object
+                        textRect = text.get_rect()
+
+                        # set text slighty under drone
+                        textRect.center = (droneX, droneY+text_y)
+                        # copying the text surface objects
+                        # to the display surface objects
+                        # at the center coordinate.
+                        screen.blit(text, textRect)
+
+                        text_y += self.textSize-self.droneSize
+                    
+                    with open('drone_data.json', 'w') as fh:
+                        json.dump(drone_data, fh)
+
+                    
 
             # Update screen
             pygame.display.update()
-
-    def get_drone_coords(self):
-        return self.droneCoords
-    def get_drone_size(self):
-        return self.droneSize

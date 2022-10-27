@@ -1,12 +1,1 @@
-{
-    "Drone_AV1":
-        {
-            "SPD(m/s)": 2,
-            "ALT(m/s)": 182,
-            "Signal(%)": 88,
-            "Battery(%)": 30,
-            "POS_X": 0,
-            "POS_Y": 0 
-        }
-}
-
+{"Drone_AV1": {"SPD(m/s)": 2, "ALT(m/s)": 182, "Signal(%)": 88, "Battery(%)": 30, "POS_X": 93, "POS_Y": 48}, "Drone_AV2": {"SPD(m/s)": 20, "ALT(m/s)": 32, "Signal(%)": 32, "Battery(%)": 73, "POS_X": 167, "POS_Y": 203}, "Drone_AV3": {"SPD(m/s)": 0, "ALT(m/s)": 0, "Signal(%)": 100, "Battery(%)": 100, "POS_X": 0, "POS_Y": 0}}
