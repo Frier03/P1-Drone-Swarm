@@ -53,14 +53,15 @@ class App:
         # get x, y coordinates from drone
         x, y = (50, 50)
         drone_id = "Drone_AV1"
-        self.fieldSize = 50
+        self.fieldSize = 100
 
         # Update map
         self.updateMap(coordinates=(x, y), drone_id=drone_id, fieldSize=self.fieldSize)
 
         while App.running:
             for event in pygame.event.get():
-                EventHandler.handler(event)
+                # We use self to access other classes in our eventhandler
+                EventHandler.handler(self, event)
 
                 if event.type == QUIT:
                     App.running = False

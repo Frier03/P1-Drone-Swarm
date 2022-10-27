@@ -3,7 +3,7 @@ import pygame, json
 
 class Interface:
 
-    def render_map(self, fieldSize = None, mapDimensionW = 300, screen = None, screenDimensions = (None, None)) -> None:
+    def render_map(self, fieldSize = None, mapDimensionW = 500, screen = None, screenDimensions = (None, None)) -> None:
         """Create grid and make map"""
 
         mapW = mapDimensionW
@@ -144,3 +144,5 @@ class Interface:
 
     def get_drone_coords(self):
         return self.droneCoords
+    def get_drone_size(self):
+        return self.droneSize
