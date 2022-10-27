@@ -60,9 +60,9 @@ class Interface:
         mid_y_coordinate = (mapStartpointY + mapH) // 2 + (fieldSize / 2)
 
         # Create outline for X
-        pygame.draw.line(screen, (0, 150 ,0), (mid_x_coordinate, mapStartpointY), (mid_x_coordinate, mapH + fieldSize), 2)
+        #pygame.draw.line(screen, (0, 150 ,0), (mid_x_coordinate, mapStartpointY), (mid_x_coordinate, mapH + fieldSize), 2)
         # Create outline for Y
-        pygame.draw.line(screen, (0, 150, 0), (mapStartpointX, mid_y_coordinate), (mapW + fieldSize, mid_y_coordinate), 2)
+        #pygame.draw.line(screen, (0, 150, 0), (mapStartpointX, mid_y_coordinate), (mapW + fieldSize, mid_y_coordinate), 2)
         # Create outline for left
         pygame.draw.line(screen, (0, 0 ,0), (mapStartpointX, mapStartpointY), (mapStartpointX, mapH + fieldSize), 1)
         # Create outline for right
@@ -97,13 +97,13 @@ class Interface:
                 #----------try to change-----------------
                 for key, value in drone_data.items():
                     if key == drone_id:
-                        drone_data[drone_id]['POS_X'] = coordinates[0]
-                        drone_data[drone_id]['POS_Y'] = coordinates[1]
-                        droneX          =       drone_data[key]['POS_X']
-                        droneY          =       drone_data[key]['POS_Y']
+                        droneX = drone_data[drone_id]['POS_X'] = coordinates[0]
+                        droneY = drone_data[drone_id]['POS_Y'] = coordinates[1]
                     else:
                         droneX          =       drone_data[key]['POS_X']
                         droneY          =       drone_data[key]['POS_Y']
+                    
+                    droneStatus = drone_data[key]['STATUS']
 
                     # Calculate if the updated drone is out of bounds from the map
                     droneX += self.threshold_x
@@ -118,7 +118,14 @@ class Interface:
                     if droneX >= self.mapX and droneX <= self.mapX + self.mapWidth*2:
                         if droneY >= self.mapY and droneY <= self.mapY + self.mapHeight*2:
                             #print('drone is inside the radar!')
-                            pygame.draw.circle(screen, (255, 22, 12), (droneX, droneY), self.droneSize)
+
+                            # Check the status of the drone, and change color from that
+                            if droneStatus == 'mission':
+                                c = (0, 255, 0)
+                            elif droneStatus == 'idle':
+                                c = (255, 0, 0)
+                                
+                            pygame.draw.circle(screen, c, (droneX, droneY), self.droneSize)
 
                     # Create text on the circle
                     # Default font
