@@ -4,8 +4,10 @@ from pygame.locals import *
 from threading import Thread
 from queue import Queue
 from time import sleep
+from eventHandler import EventHandler
 
 from interface import Interface
+from eventHandler import EventHandler
 
 class App:
     """Create a single-window app with multiple scenes."""
@@ -26,6 +28,7 @@ class App:
 
         # Initialize classes
         self.interface = Interface
+        self.eventHandler = EventHandler
 
         # Start the worker (thread)
         thread = Thread(target=self.worker)
@@ -42,30 +45,40 @@ class App:
         """Run the worker event loop for all other protocols (drone related stuff)"""
         while True:
             print('Worker: Ready')
-            sleep(10)
+            sleep(60)
 
     def run(self):
         """Run the main event loop."""
 
-        x, y = (0, 0)
-        for i in range(20):
-            # Update screen background
-            self.updateBackground()
-            # Render Map
-            self.interface.render_map(self, screen=App.screen, screenDimensions = (self.screenWidth, self.screenHeight))
+        # get x, y coordinates from drone
+        x, y = (50, 50)
+        drone_id = "Drone_AV1"
+        self.fieldSize = 50
 
-            self.interface.set_point(self, coordinates=(x, y), screen=App.screen)
-
-            x+=10
-            y+=5
-            sleep(1)
+        # Update map
+        self.updateMap(coordinates=(x, y), drone_id=drone_id, fieldSize=self.fieldSize)
 
         while App.running:
             for event in pygame.event.get():
+                EventHandler.handler(event)
+
                 if event.type == QUIT:
                     App.running = False
 
+
+                
         pygame.quit()
+
+    def updateMap(self, coordinates=None, drone_id=None, fieldSize=None):
+        # Update screen background
+        self.updateBackground()
+
+        # Render Map
+        self.interface.render_map(self, screen=App.screen, fieldSize=fieldSize, screenDimensions = (self.screenWidth, self.screenHeight))
+
+        # Render drone
+        self.interface.updatePoint(self, coordinates=coordinates, drone_id=drone_id, screen=App.screen)
+
 
 if __name__ == '__main__':
     App().run()
