@@ -1,7 +1,8 @@
 from code import interact
 from pygame import ACTIVEEVENT, MOUSEBUTTONDOWN, MOUSEBUTTONUP, MOUSEMOTION, MOUSEWHEEL, QUIT, WINDOWFOCUSLOST, WINDOWLEAVE
 import pygame
-from interface import Interface
+import json
+from settings import *
 
 class EventHandler:
 
@@ -28,19 +29,17 @@ class EventHandler:
                     return True
         return False
 
-    def checkDroneMapInteraction(self, event):
-        # Get X,Y mouse coordinates
-        mx, my = pygame.mouse.get_pos()
+    def is_map_calibrated(self):
+        return MAP_CALIBRATED
 
-        if event.type == MOUSEBUTTONDOWN:
-            x, y = Interface.get_drone_coords(self)
-            w, h = (Interface.get_drone_size(self), Interface.get_drone_size(self))
-            deviation = Interface.get_drone_size(self)
-            onDrone = EventHandler.collideDetect(mx, my, x-deviation, y-deviation, w+deviation, h+deviation)
+    def map_has_been_calibrated(self):
+        MAP_CALIBRATED=True
+        return MAP_CALIBRATED
 
-            if onDrone:
-                print('show more information')
+    def calibrate_map(self):
+        pass
     
     def handler(self, event):
-        EventHandler.checkDroneMapInteraction(self, event)
+        #EventHandler.calibrate_map(self, event)
+        pass
 
