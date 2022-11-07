@@ -1,5 +1,3 @@
-from distutils.command import check
-from email.policy import default
 import os
 import subprocess
 import socket
@@ -14,7 +12,7 @@ def getCurrentWifi():
     wifi = wifi.decode('utf-8').replace(" \r","")
     currentWifi = re.findall(r"(?:Profile *: )(.*)\n", wifi)
     if len(currentWifi) > 0:
-        return currentWifi[0]
+        return currentWifi[0]       #Return "eduroam"
     else:
         return None
 
@@ -40,12 +38,13 @@ def checkDroneConnection():
     s.settimeout(5)
     s.bind(locaddr)
 
-    for i in range(10):
+    for i in range(5):
         s.sendto('command'.encode('utf-8'), tello_address)
         try:
             response, ip = s.recvfrom(1024)
             response = response.decode("utf-8")
             if response == "ok":
+                s.close()
                 return True
             elif response == "error":
                 print("Fatal error on drone?")
@@ -54,8 +53,6 @@ def checkDroneConnection():
             pass
             #print("Error", str(e))
     return False
-
-
 
 
 
@@ -79,7 +76,7 @@ def waitForConnection():
 
 def getWifiNetworks():
     ww = winwifi.WinWiFi()
-    nearbyWIfis = [i for i in ww.scan()]
+    nearbyWIfis = ww.scan()
     return nearbyWIfis
 
 
@@ -184,8 +181,9 @@ print("Default wifi:", defaultWifi)
 print("Scanning for nearby networks... ", end="")
 wNetworks = getWifiNetworks()
 print(f"({len(wNetworks)} networks found)")
+
 for w in wNetworks:
-    if telloWIfiContains in w.ssid:            #Ændres til "Tello Drone" bla bla
+    if telloWIfiContains in w.ssid:
         print(f"\n--> Trying to connect to ({w.auth}) {w.ssid}")
         if w.auth == "Open" and w.encrypt == "None":
             connectToNewWifi(w.ssid)
@@ -193,11 +191,23 @@ for w in wNetworks:
         else:
             connectToNewWifi(w.ssid, telloWIfiPassword)
 
+        #Wait until wifi is connected
+        print("Establishing Connection", end="")
+        for i in range(10):
+            if getCurrentWifi() == w.ssid:
+                print(" --> Connected", end="")
+                break
+            else:
+                print(".", end="")
+                sleep(1)
+        print()
+        
 
         #waitForConnection()
         print("Probing drone at", w.ssid, "...")
         if checkDroneConnection():
             print("[+] Drone succesfully probed!\n")
+            #Make drone connect to your hotspot
         else:
             print("[-] Drone no connection")
         print("")
