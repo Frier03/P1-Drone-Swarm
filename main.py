@@ -42,13 +42,16 @@ class App:
         """Run the main event loop."""
     
         # Load GUI
-        self.gui() # Calls "def __call__" inside gui class
+        self.gui() # Calls "__call__" inside gui class
 
         # Connect to possible drones
 
         # Create Swarm Object with connected drones id
         try:
             while App.running:
+                # Redraw background color
+                self.screen.fill(Color(102,102,102))
+
                 for event in pygame.event.get():
                     if event.type == QUIT:
                         App.running = False
