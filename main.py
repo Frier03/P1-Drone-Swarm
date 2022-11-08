@@ -10,26 +10,32 @@ from settings import *
 from Interface import RenderMap
 from Interface import CalibrateMap
 from Interface import GUI
+from pygame_widgets.textbox import TextBox
 
 class App:
     """Create a single-window app with multiple scenes."""
 
     def __init__(self):
         """Initialize pygame and the application."""
-        self.backgroundColor = (102,102,102) # gray dark background
         pygame.init()
-        self.screenWidth = 1200
+        self.clock = pygame.time.Clock()
+        self.screenWidth = 1420
         self.screenHeight = 800
 
-        self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight))
-        pygame.display.set_caption('Drone Fleet-Management Software')
-        aau_img = pygame.image.load('aau.png').convert()
+        self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight), pygame.NOFRAME)
+        pygame.display.set_caption('')
+        aau_img = pygame.image.load('aau.png')
         pygame.display.set_icon(aau_img)
 
         # Initialize interface classes
         self.gui = GUI.Gui(self.screen, pygame.event.get())
 
         App.running = True
+
+        # Start Worker thread
+        worker = Thread(target=self.worker)
+        worker.daemon = True
+        worker.start()
 
     def worker(self):
         """Run the worker event loop for all other protocols (drone related stuff)"""
@@ -49,16 +55,14 @@ class App:
         # Create Swarm Object with connected drones id
         try:
             while App.running:
-                # Redraw background color
-                self.screen.fill(Color(102,102,102))
-
                 for event in pygame.event.get():
                     if event.type == QUIT:
                         App.running = False
+            
                 
                 # Call once every loop to allow widgets to render and listen
                 pygame_widgets.update(pygame.event.get())
-
+                
                 # Update now all changes from above to the screen
                 pygame.display.update()
         except Exception as e:
