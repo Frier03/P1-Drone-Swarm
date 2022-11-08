@@ -7,6 +7,8 @@ from pygame_widgets.button import Button
 from pygame_widgets.dropdown import Dropdown
 from pygame_widgets.popup import Popup, PopupType
 from pygame_widgets.selection import Radio
+import pickle
+import re
 import pyautogui
 #https://pygamewidgets.readthedocs.io/en/latest/widgets/toggle/
 class Gui:
@@ -207,9 +209,24 @@ class Gui:
         
         # Basic validation of each input content
         if self.__validateInput([drone_name, drone_mac, drone_type, drone_ip], [self.drone_name, self.drone_mac, self.drone_type, self.drone_ip]):
-            print(' next validation ')
-        else:
-            print('something went wrong.')
+
+            # Validate MAC Address by using RegEx margin match - Can match pattern using -: (00:00:00-00-00-00)
+            if re.search(r"((([0-9a-fA-F]){2}[-:]){5}([0-9a-fA-F]){2})", drone_mac) is not None:
+
+                # Add Data to database\
+                data = [drone_name, drone_mac, drone_type, drone_ip]
+
+                # Convert list to base16 bytearray
+                base16_data = bytearray(pickle.dumps(data))
+                pass
+            
+            else:
+
+                # Show red Border
+                self.drone_mac.borderThickness=1
+
+
+
 
 
 

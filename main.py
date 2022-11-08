@@ -11,6 +11,7 @@ from Interface import RenderMap
 from Interface import CalibrateMap
 from Interface import GUI
 from pygame_widgets.textbox import TextBox
+import pyautogui
 
 class App:
     """Create a single-window app with multiple scenes."""
@@ -50,9 +51,6 @@ class App:
         # Load GUI
         self.gui() # Calls "__call__" inside gui class
 
-        # Connect to possible drones
-
-        # Create Swarm Object with connected drones id
         try:
             while App.running:
                 for event in pygame.event.get():
@@ -65,6 +63,7 @@ class App:
                 
                 # Update now all changes from above to the screen
                 pygame.display.update()
+
         except Exception as e:
             print(e)
                     
