@@ -17,3 +17,7 @@ In order to contribute with git
 - Wifisetup.py  (gets the drones connected to your hotspot)
 - GUI.py        (Renders the 2D map of the drones with PyGame)
 
+
+
+# ADD Drone (name=Add)
+# Parse: Nickname, ID/MAC, Type

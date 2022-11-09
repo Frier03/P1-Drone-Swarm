@@ -1,3 +1,6 @@
+
+*.xml
+
 #So your wifi passwords arent shared on git
 /wifi_profiles
 
