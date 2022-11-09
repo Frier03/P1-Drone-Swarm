@@ -3,10 +3,8 @@ import pygame
 from pygame.locals import *
 from threading import Thread
 from time import sleep
-from eventHandler import EventHandler
 import pygame_widgets
 from pygame_widgets.button import Button
-from settings import *
 from Interface import RenderMap
 from Interface import CalibrateMap
 from Interface import GUI
@@ -25,7 +23,7 @@ class App:
 
         self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight), pygame.NOFRAME)
         pygame.display.set_caption('')
-        aau_img = pygame.image.load('aau.png')
+        aau_img = pygame.image.load('Interface/aau.png')
         pygame.display.set_icon(aau_img)
 
         # Initialize interface classes

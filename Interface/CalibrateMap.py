@@ -1,6 +1,5 @@
 import pygame, json, time
 from itertools import cycle
-from settings import *
 MOUSEBUTTONDOWN                     =   1025
 
 corners = [] # x,y at each corner

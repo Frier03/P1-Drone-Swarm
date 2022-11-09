@@ -5,7 +5,6 @@ import pygame_widgets
 from pygame_widgets.textbox import TextBox
 from pygame_widgets.button import Button
 from pygame_widgets.dropdown import Dropdown
-from pygame_widgets.popup import Popup, PopupType
 from pygame_widgets.selection import Radio
 import pickle
 import re
@@ -18,7 +17,7 @@ class Gui:
         self.events = events
         self.connect_buttons = list() # Holds each button on our custom adapter selection list
         self.selected_value = None
-        self.drone_img = pygame.image.load('drone.png').convert()
+        self.drone_img = pygame.image.load('Interface/drone.png').convert()
 
     def __call__(self) -> None:
         """Load GUI once every call on class"""
@@ -51,7 +50,7 @@ class Gui:
 
     def __show_custom_popup(self, width=None, height=None, title=None):
         # Font render
-        font = pygame.font.Font(f'BostonThin.otf', 14)
+        font = pygame.font.Font(f'Interface/BostonThin.otf', 14)
         # Place a alpha 128 rectangle on top of everything
         s = pygame.Surface(self.screen.get_size())  # the size of your rect
         s.set_alpha(40)                # alpha level
@@ -146,15 +145,9 @@ class Gui:
         self.__adapter_y = y
 
     def __add_text(self, value=None, x=0, y=0, fontsize=10, bold=False, italic=False, color=(0,0,0), fontname='BostonThin'):
-        font = pygame.font.Font(f'{fontname}.otf', fontsize, bold=bold, italic=italic)
+        font = pygame.font.Font(f'Interface/{fontname}.otf', fontsize, bold=bold, italic=italic)
         text = font.render(value, True, color)
         self.screen.blit(text, (x, y))
-
-    def __add_popup(self, x=100, y=100, w=400, h=400, PopupType=PopupType.INFO, title=None, text=None, textSize=20) -> None:
-        self.popup = Popup(self.screen, x, y, w, h, PopupType, title,
-                  text,
-                  radius=20, textSize=textSize)
-        return self.popup
 
     def __add_button(self, value=None, x=0, y=0, radius=7, w=150, h=50, fontsize=25, execfunction=None,execfunctionParams='', shadowDistance=2, shadowColour=(153, 193, 255), inactiveColour=(124, 176, 255), pressedColour=(112, 154, 217), hoverColour=(114, 170, 255)) -> None:
         """ Private method. No other function than updateGui or __call__ needs this function"""
