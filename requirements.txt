@@ -1,9 +1,10 @@
-
-threading
+#GUI
 pygame
 pygame_widgets
 pyautogui
 
+#WifiSetup
 requests
 regex
 winwifi
+
