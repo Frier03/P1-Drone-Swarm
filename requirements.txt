@@ -1,4 +1,9 @@
+
 threading
 pygame
 pygame_widgets
 pyautogui
+
+requests
+regex
+winwifi

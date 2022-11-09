@@ -1,2 +1,13 @@
 
 *.xml
+
+#So your wifi passwords arent shared on git
+/wifi_profiles
+
+#Pycache doesnt matter
+/__pycache__
+
+#Bjørns lort basically
+/LORT
+tellotest.py
+testing.py
