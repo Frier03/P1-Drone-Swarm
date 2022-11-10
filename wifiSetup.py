@@ -53,7 +53,7 @@ class DroneConnector():
     def waitForConnection(self):
         """Waits until a connection to www.google.com is established"""
         print("[!] Searching for connection", end="")
-        for i in range(10):   
+        for i in range(10):
             try:
                 r.get("https://www.google.com")
                 print(" --> Ok!")
@@ -64,6 +64,7 @@ class DroneConnector():
             sleep(1)
         print("")
         print(" --> Error?")
+        return False
     
 
     @privatemethod
@@ -148,14 +149,12 @@ class DroneConnector():
             os.makedirs(self.wifi_profile_folder)
         
         fileName = self.wifi_profile_folder + "\\" + ssid + ".xml"
-        if not os.path.isfile(fileName):
-            
+        # fileName = "wifi_profiles\\TELLO-ABCDEF.xml"
+        if not os.path.isfile(fileName):                #If there is NO wifi profile already, make a new one
             profile = self.generateWifiProfile(ssid, key)
-
             with open(fileName, "w") as f:
                 f.write(profile)
                 f.close()
-
 
         command = r"netsh wlan add profile filename=" + fileName
         resp = subprocess.run(command, capture_output=True)
@@ -184,39 +183,37 @@ class DroneConnector():
         return drones
         
 
-    def calibrateDrone(self, droneWifi):
+    def calibrateDrone(self, droneMAC):
         """Opretter forbindelse, sætter i SDK mode og forbinder dronen til hotspottet"""
-        self.defaultWifi = self.getCurrentWifi()
 
-        print(f"\n--- Calibrating drone {droneWifi.ssid} ---")
-        if droneWifi.auth == "Open" and droneWifi.encrypt == "None":
-            self.connectToNewWifi(droneWifi.ssid)
-            #Set password to telloWifiPassword
-        else:
-            self.connectToNewWifi(droneWifi.ssid, self.telloWIfiPassword)
+        droneSSID = "TELLO-" + droneMAC
+        self.connectToNewWifi(droneSSID)
 
         #Wait until wifi is connected
         print("Connecting to drone wifi", end="")
+        isWifiConnected = False
         for i in range(10):
-            if self.getCurrentWifi() == droneWifi.ssid:
+            if self.getCurrentWifi() == droneSSID:
                 print(" --> Connected")
+                isWifiConnected = True
                 break
             else:
                 print(".", end="")
                 sleep(0.5)
-
-
+        if isWifiConnected == False: return False
+        
 
         # ---------------------------------------------
-
+        # VI ER PÅ DRONENS WIFI NU
 
         #SOCKET SETUP
-        locaddr = ('', 8889)                        #HOST and PORT
-        tello_address = ('192.168.10.1', 8889)      #
+        locaddr = ('', 8889)                        #HOST and PORT ME
+        tello_address = ('192.168.10.1', 8889)      #HOST AND PORT FOR TELLO
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(3)
         s.bind(locaddr)
 
+        #KEEPING TRACK OF DRONE CONNECTION
         conEstablished = False
 
         # First make it enter SDK command mode
@@ -240,6 +237,7 @@ class DroneConnector():
         if conEstablished == True:     # If drone actually is connected
             # Make it connect to the hotspot
             apCommand = f"ap {self.hotspotSSID} {self.hotspotPASS}"  # The (ap ssid pass) command
+            #apCOmmand = "ap Bear joinTheNet"
             print(f"Sending <{apCommand}> --> ", end="")
             for i in range(5):
                 s.sendto(apCommand.encode('utf-8'), tello_address)
@@ -254,8 +252,7 @@ class DroneConnector():
                     break
         
         s.close()
-
-        return conEstablished
+        return conEstablished           #True eller False
 
     
     def getConnectedDrones(self):
@@ -266,6 +263,8 @@ class DroneConnector():
             arping = subprocess.check_output("arp -a")
             arping = arping.decode('utf-8').replace(" \r","")
             macsHotspot = re.findall(arp_a_regex, arping)
+            # macsHotspot = [(192.168.137.36, 34-d2-62-f2-51-f6), (ip, mac)]
+
             # Remove the subnet entry
             macsHotspot.remove(('192.168.137.255', 'ff-ff-ff-ff-ff-ff'))
             
@@ -286,13 +285,10 @@ class DroneConnector():
         T = Thread(target=self.getConnectedDrones)
         T.daemon = True
         T.start()
-        
-        
 
 
 
 if __name__ == "__main__":
     print("Import med DC = DroneConnector()")
-
 
 
