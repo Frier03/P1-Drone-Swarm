@@ -32,16 +32,6 @@ class App:
 
         App.running = True
 
-        # Start Worker thread
-        worker = Thread(target=self.worker)
-        worker.daemon = True
-        worker.start()
-
-    def worker(self):
-        """Run the worker event loop for all other protocols (drone related stuff)"""
-        while True:
-            print('Worker: Ready')
-            sleep(10)
 
 
     def run(self):
@@ -64,7 +54,7 @@ class App:
 
         except Exception as e:
             print(e)
-                    
+
         pygame.quit()
 
 if __name__ == '__main__':

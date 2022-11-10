@@ -8,6 +8,7 @@ from pygame_widgets.dropdown import Dropdown
 from pygame_widgets.selection import Radio
 import re
 import Interface.fileManager as fm
+from wifiSetup import DroneConnector
 
 #https://pygamewidgets.readthedocs.io/en/latest/widgets/toggle/
 class Gui:
@@ -18,6 +19,9 @@ class Gui:
         self.connect_buttons = list() # Holds each button on our custom adapter selection list
         self.selected_value = None
         self.drone_img = pygame.image.load('Interface/drone.png').convert()
+
+        self.DC = DroneConnector()
+
 
     def __call__(self) -> None:
         """Load GUI once every call on class"""
@@ -221,7 +225,7 @@ class Gui:
 
                 # Add Data to database\
                 data = [drone_name, drone_mac, drone_type, drone_ip]
-
+                
                 # Insert data to json
                 res = fm.insert_data('drone_data.json', data)
 
@@ -242,7 +246,6 @@ class Gui:
     def __connnect_to_all_event(self, *args) -> None:
         """ Private method. No other function than updateGui or __call__ needs this function """
         print('Connect to All Drones!')
-        pass
 
     def __connect_event(self, *args) -> None:
         """ Private method. No other function than updateGui or __call__ needs this function """
@@ -256,6 +259,20 @@ class Gui:
         if data_found != '101':
             print(f'Found data for drone {args}')
             print('Drone MAC:', data_found['MAC_ADDRESS'])
+            dMAC = data_found['MAC_ADDRESS'].replace('-', '')[-6:]
+
+            print([i.ssid for i in self.DC.findDrones()])
+            if self.DC.calibrateDrone(dMAC):
+                print("Connection succeded")
+            else:
+                print("Not calibrated!?")
+            self.DC.connectWifi(self.DC.defaultWifi)
+            self.DC.waitForConnection()
+
+
+        
+
+
 
     def __mission_event(self, *args) -> None:
         """ Private method. No other function than updateGui or __call__ needs this function """

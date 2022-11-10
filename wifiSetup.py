@@ -31,21 +31,21 @@ class DroneConnector():
             return None
 
 
-    def __init__(self) -> None:
+    def __init__(self):
+        #Save your current wifi to connect back to later
         self.defaultWifi = self.getCurrentWifi()
 
-    
+        #Constantly update connectedDrones[] with the currently online drones
+        T = Thread(target=self.getConnectedDrones)
+        T.daemon = True
+        T.start()
+
+
+    #@privatemethod
     def connectWifi(self, SSID):
         """Connect to a wifi, which you already have a wifi-profile for"""
         name = SSID
         command = "netsh wlan connect name=\""+name+"\" ssid=\""+SSID+"\" interface=Wi-Fi"
-        resp = subprocess.run(command, capture_output=True)
-
-
-    @privatemethod
-    def disconnectWifi(self):
-        """NOT USED. Disconnect from your wifi"""
-        command = "netsh wlan disconnect interface=Wi-Fi"
         resp = subprocess.run(command, capture_output=True)
 
 
@@ -162,6 +162,35 @@ class DroneConnector():
 
 
 
+    #Bliver lavet en thread af denne
+    def getConnectedDrones(self):
+        while True:
+            # Hotspot is always on 192.168.137.0/24
+            arp_a_regex = r"""(192\.168\.137\.[0-9]{0,3}) *([0-9a-z-]*)  """
+
+            arping = subprocess.check_output("arp -a")
+            arping = arping.decode('utf-8').replace(" \r","")
+            macsHotspot = re.findall(arp_a_regex, arping)
+            # macsHotspot = [(192.168.137.36, 34-d2-62-f2-51-f6), (ip, mac)]
+
+            # Remove the subnet entry
+            macsHotspot.remove(('192.168.137.255', 'ff-ff-ff-ff-ff-ff'))
+            
+            for m in macsHotspot[:]:            #Lav en ny kopi for ikke at slette i macsHotspot mens vi itererer i den. Spørg Bjørn hvis forvirret
+                pingCommand = f"ping -w 500 {m[0]}"
+                #print(pingCommand)
+                pinging = subprocess.run(pingCommand, capture_output=True)
+                pinging = pinging.stdout.decode('utf-8').replace(" \r","")
+                if "Received = 0" in pinging:
+                    macsHotspot.remove(m)
+            sleep(0.1)
+            #Update so other modules knows what methods are connected
+            self.connectedDrones = macsHotspot
+
+
+
+
+
     ########################################################################
     #
     #   NEDENFOR ER PUBLIC FUNKTIONERNE MENT til AT BLIVE KALDT I GUI-en
@@ -255,38 +284,6 @@ class DroneConnector():
         return conEstablished           #True eller False
 
     
-    def getConnectedDrones(self):
-        while True:
-            # Hotspot is always on 192.168.137.0/24
-            arp_a_regex = r"""(192\.168\.137\.[0-9]{0,3}) *([0-9a-z-]*)  """
-
-            arping = subprocess.check_output("arp -a")
-            arping = arping.decode('utf-8').replace(" \r","")
-            macsHotspot = re.findall(arp_a_regex, arping)
-            # macsHotspot = [(192.168.137.36, 34-d2-62-f2-51-f6), (ip, mac)]
-
-            # Remove the subnet entry
-            macsHotspot.remove(('192.168.137.255', 'ff-ff-ff-ff-ff-ff'))
-            
-            for m in macsHotspot[:]:            #Lav en ny kopi for ikke at slette i macsHotspot mens vi itererer i den. Spørg Bjørn hvis forvirret
-                pingCommand = f"ping -w 500 {m[0]}"
-                #print(pingCommand)
-                pinging = subprocess.run(pingCommand, capture_output=True)
-                pinging = pinging.stdout.decode('utf-8').replace(" \r","")
-                if "Received = 0" in pinging:
-                    macsHotspot.remove(m)
-            sleep(0.1)
-            #Update so other modules knows what methods are connected
-            self.connectedDrones = macsHotspot
-
-    
-    def getConnectedDrones_Start_Thread(self):
-        print("Thread started")
-        T = Thread(target=self.getConnectedDrones)
-        T.daemon = True
-        T.start()
-
-
 
 if __name__ == "__main__":
     print("Import med DC = DroneConnector()")

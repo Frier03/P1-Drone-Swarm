@@ -1,10 +1,11 @@
 #GUI
 pygame
-pygame_widgets
+pygame_widgets==1.1.0
 pyautogui
 
 #WifiSetup
 requests
 regex
 winwifi
+access_modifiers
 
