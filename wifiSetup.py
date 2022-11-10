@@ -3,6 +3,7 @@ import subprocess
 import socket
 import requests as r
 from time import sleep
+from threading import Thread
 import re           #Regex
 import winwifi      #Used for ww.scan(), nothing else
 from access_modifiers import privatemethod
@@ -10,11 +11,13 @@ from access_modifiers import privatemethod
 class DroneConnector():
     defaultWifi = "eduroam"                 #Wifi'et man er forbundet til lige nu
     telloWIfiContains = "TELLO"         
-    telloWIfiPassword = "gruppe154"     
+    telloWIfiPassword = "gruppe154"
     wifi_profile_folder = "wifi_profiles"   #Mappen hvor vores wifi-profiler er gemt
     hotspotSSID = "Bear"                    #
     hotspotPASS = "joinTheNet"              #Navnet og pass på dit hotspot som du laver
     
+    connectedDrones = []
+
 
     @privatemethod
     def getCurrentWifi(self):
@@ -28,7 +31,10 @@ class DroneConnector():
             return None
 
 
-    @privatemethod
+    def __init__(self) -> None:
+        self.defaultWifi = self.getCurrentWifi()
+
+    
     def connectWifi(self, SSID):
         """Connect to a wifi, which you already have a wifi-profile for"""
         name = SSID
@@ -43,7 +49,7 @@ class DroneConnector():
         resp = subprocess.run(command, capture_output=True)
 
 
-    @privatemethod
+    #@privatemethod
     def waitForConnection(self):
         """Waits until a connection to www.google.com is established"""
         print("[!] Searching for connection", end="")
@@ -182,7 +188,7 @@ class DroneConnector():
         """Opretter forbindelse, sætter i SDK mode og forbinder dronen til hotspottet"""
         self.defaultWifi = self.getCurrentWifi()
 
-        print(f"--- Calibrating drone {droneWifi.ssid} ---")
+        print(f"\n--- Calibrating drone {droneWifi.ssid} ---")
         if droneWifi.auth == "Open" and droneWifi.encrypt == "None":
             self.connectToNewWifi(droneWifi.ssid)
             #Set password to telloWifiPassword
@@ -249,53 +255,44 @@ class DroneConnector():
         
         s.close()
 
-        #sleep(5)   #Why is this here?
-        print("Getting wifi again")
-        self.connectWifi(self.defaultWifi)
-        self.waitForConnection()
-        #Maybe move this out?
-
         return conEstablished
 
-
+    
     def getConnectedDrones(self):
-        # Hotspot is always on 192.168.137.0/24
-        arp_a_regex = r"""(192\.168\.137\.[0-9]{0,3}) *([0-9a-z-]*)  """
+        while True:
+            # Hotspot is always on 192.168.137.0/24
+            arp_a_regex = r"""(192\.168\.137\.[0-9]{0,3}) *([0-9a-z-]*)  """
 
-        arping = subprocess.check_output("arp -a")
-        arping = arping.decode('utf-8').replace(" \r","")
-        macsHotspot = re.findall(arp_a_regex, arping)
-        
-        # Remove the subnet entry
-        macsHotspot.remove(('192.168.137.255', 'ff-ff-ff-ff-ff-ff'))
-        
-        #print("Found mac addresses", macsHotspot)
-        
-        for m in macsHotspot[:]:            #Lav en ny kopi for ikke at slette i macsHotspot mens vi itererer i den. Spørg Bjørn hvis forvirret
-            pingCommand = f"ping -w 500 {m[0]}"
-            #print(pingCommand)
-            pinging = subprocess.run(pingCommand, capture_output=True)
-            pinging = pinging.stdout.decode('utf-8').replace(" \r","")
+            arping = subprocess.check_output("arp -a")
+            arping = arping.decode('utf-8').replace(" \r","")
+            macsHotspot = re.findall(arp_a_regex, arping)
+            # Remove the subnet entry
+            macsHotspot.remove(('192.168.137.255', 'ff-ff-ff-ff-ff-ff'))
+            
+            for m in macsHotspot[:]:            #Lav en ny kopi for ikke at slette i macsHotspot mens vi itererer i den. Spørg Bjørn hvis forvirret
+                pingCommand = f"ping -w 500 {m[0]}"
+                #print(pingCommand)
+                pinging = subprocess.run(pingCommand, capture_output=True)
+                pinging = pinging.stdout.decode('utf-8').replace(" \r","")
+                if "Received = 0" in pinging:
+                    macsHotspot.remove(m)
+            sleep(0.1)
+            #Update so other modules knows what methods are connected
+            self.connectedDrones = macsHotspot
 
-            if "Received = 0" in pinging:
-                macsHotspot.remove(m)
-        return macsHotspot
-
+    
+    def getConnectedDrones_Start_Thread(self):
+        print("Thread started")
+        T = Thread(target=self.getConnectedDrones)
+        T.daemon = True
+        T.start()
+        
+        
 
 
 
 if __name__ == "__main__":
-    DC = DroneConnector()
-
-    droneWifis = DC.findDrones()
-    for dw in droneWifis:
-        print("--- ", dw.ssid, dw.auth)
-        if DC.calibrateDrone(dw) == True:
-            print("Drone", dw.ssid, "calibrated successfully")
-
-    print("Giving the drones time to connect")
-    sleep(5)
-    print(DC.getConnectedDrones())
+    print("Import med DC = DroneConnector()")
 
 
 
