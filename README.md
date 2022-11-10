@@ -18,6 +18,15 @@ In order to contribute with git
 - GUI.py        (Renders the 2D map of the drones with PyGame)
 
 
+## Requirements and Installation
+- `python >= 3.10`
+- `pygame >= 2.0.0`
+
+If PyGame gives errors, try `pip install pygame --pre`
+
 
 # ADD Drone (name=Add)
 # Parse: Nickname, ID/MAC, Type
+
+34:d2:62:f2:51:f6
+
