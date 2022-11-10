@@ -6,9 +6,9 @@ from pygame_widgets.textbox import TextBox
 from pygame_widgets.button import Button
 from pygame_widgets.dropdown import Dropdown
 from pygame_widgets.selection import Radio
-import pickle
 import re
-import pyautogui
+import Interface.fileManager as fm
+
 #https://pygamewidgets.readthedocs.io/en/latest/widgets/toggle/
 class Gui:
     def __init__(self, screen, events) -> None:
@@ -24,6 +24,13 @@ class Gui:
         self.__initialize()
 
     def __initialize(self):
+        widgets = pygame_widgets.WidgetHandler.getWidgets()
+        for _ in range(len(widgets)):
+            pygame_widgets.WidgetHandler.removeWidget(widgets[0])
+
+        # Request data to insert in custom adapter
+        data = fm.request_data('drone_data.json')
+
         # Set background color
         self.screen.fill(Color(self.backgroundColor))
 
@@ -34,7 +41,7 @@ class Gui:
         self.add_button = self.__add_button(value='Add', x=300, y=85, radius=2, w=50, h=30, execfunction=self.__add_drone)
 
         # Add Custom Adapter
-        self.__add_customAdapter_selection(values=['Tello EDU 1', 'Tello EDU 2', 'Tello EDU 3'], x=100, y=130, shadowDistance=2, execfuntion=self.__connect_event)
+        self.__add_customAdapter_selection(values=data, x=100, y=130, shadowDistance=2, execfuntion=self.__connect_event)
 
         # Add Connect to All Drones Button
         self.connectall_button = self.__add_button(value='Connect to All', x=100, y=self.__adapter_y, w=150, h=30, execfunction=self.__connnect_to_all_event)
@@ -44,7 +51,7 @@ class Gui:
 
         # Add Stop Button
         self.stop_button = self.__add_button(value='STOP', x=100, y=700, execfunction=self.__stop_event, radius=20, shadowColour=(230, 158, 159), inactiveColour=(239, 142, 143), pressedColour=(207, 117, 118), hoverColour=(245, 125, 126))
-
+    
     def reloadGui(self):
         self.__initialize()
 
@@ -111,37 +118,43 @@ class Gui:
             # Update now all changes from above to the screen
             pygame.display.update()
 
-    def __add_customAdapter_selection(self, values=list(), x=0, y=0, shadowDistance=2, radius=4, execfuntion=None) -> None:
+    def __add_customAdapter_selection(self, values=None, x=0, y=0, shadowDistance=2, radius=4, execfuntion=None) -> None:
         width = 250
         height = 90
 
-        for i in range(len(values)):
-            # Shadow
-            pygame.draw.rect(self.screen, (217,222,224, 10), pygame.Rect(x-shadowDistance, y-shadowDistance, width+(shadowDistance*2), height+(shadowDistance*2)),border_radius=radius)
-
-            # Box
-            pygame.draw.rect(self.screen, (255,255,255), pygame.Rect(x, y, width, height),border_radius=radius)
-
-            # Draw Title Text
-            self.__add_text(x=x+width/4+5, y=y+15, value=values[i], bold=True, fontsize=16, fontname='BostonBold')
-
-            # Draw ID/MAC Text
-            self.__add_text(x=x+width/4+5, y=y+40, value='ID', fontsize=12,color=(180,180,180), fontname='BostonRegular')
-            self.__add_text(x=x+width/4+23, y=y+40, value='01-00-5e-7f-ff-fa', fontsize=12, fontname='BostonRegular')
-
-            # Draw Type Text
-            self.__add_text(x=x+width/4+5, y=y+55, value='Type', fontsize=12,color=(180,180,180), fontname='BostonRegular')
-            self.__add_text(x=x+width/4+38, y=y+55, value='DJI Tello EDU', fontsize=12, fontname='BostonRegular')
-
-            # Draw Drone Image
-            self.drone_img = pygame.transform.smoothscale(self.drone_img, (60, 60))
-            self.screen.blit(self.drone_img, (x+2, y+13))
-
-            # Draw Connect Button (Store each button in a list, so we know which button is pressed)
-            button = self.__add_button(value='Connect', x=295, y=y+12, w=40,h=20, fontsize=14, radius=2, shadowDistance=1, execfunction=execfuntion, execfunctionParams = values[i])
-            self.connect_buttons.append([button, values[i]])
-
+        # Check if no drones has been added
+        if len(values) < 1:
+            self.__add_text(x=x, y=y+15, value='No Drones Added', fontsize=20, fontname='BostonBold', color=(255, 0, 0))
             y+=height+10
+
+        else:
+            for key, value in values.items():
+                # Shadow
+                pygame.draw.rect(self.screen, (217,222,224, 10), pygame.Rect(x-shadowDistance, y-shadowDistance, width+(shadowDistance*2), height+(shadowDistance*2)),border_radius=radius)
+
+                # Box
+                pygame.draw.rect(self.screen, (255,255,255), pygame.Rect(x, y, width, height),border_radius=radius)
+
+                # Draw Title Text
+                self.__add_text(x=x+width/4+5, y=y+15, value=values[key]['NAME'], bold=True, fontsize=16, fontname='BostonBold')
+
+                # Draw ID/MAC Text
+                self.__add_text(x=x+width/4+5, y=y+40, value='ID', fontsize=12,color=(180,180,180), fontname='BostonRegular')
+                self.__add_text(x=x+width/4+23, y=y+40, value=values[key]['MAC_ADDRESS'], fontsize=12, fontname='BostonRegular')
+
+                # Draw Type Text
+                self.__add_text(x=x+width/4+5, y=y+55, value='Type', fontsize=12,color=(180,180,180), fontname='BostonRegular')
+                self.__add_text(x=x+width/4+38, y=y+55, value=values[key]['TYPE'], fontsize=12, fontname='BostonRegular')
+
+                # Draw Drone Image
+                self.drone_img = pygame.transform.smoothscale(self.drone_img, (60, 60))
+                self.screen.blit(self.drone_img, (x+2, y+13))
+
+                # Draw Connect Button (Store each button in a list, so we know which button is pressed)
+                button = self.__add_button(value='Connect', x=295, y=y+12, w=40,h=20, fontsize=14, radius=2, shadowDistance=1, execfunction=execfuntion, execfunctionParams = values[key]['NAME'])
+                self.connect_buttons.append([button, values[key]['NAME']])
+
+                y+=height+10
         self.__adapter_y = y
 
     def __add_text(self, value=None, x=0, y=0, fontsize=10, bold=False, italic=False, color=(0,0,0), fontname='BostonThin'):
@@ -209,19 +222,22 @@ class Gui:
                 # Add Data to database\
                 data = [drone_name, drone_mac, drone_type, drone_ip]
 
-                # Convert list to base16 bytearray
-                base16_data = bytearray(pickle.dumps(data))
-                pass
-            
+                # Insert data to json
+                res = fm.insert_data('drone_data.json', data)
+
+                if res == 'OK':
+
+                    print('Closing POPUP')
+                    # Close Pop up
+                    self.__close_popup()
+
+                    #TODO: Show Success text message on screen after completion
+
+
             else:
 
                 # Show red Border
                 self.drone_mac.borderThickness=1
-
-
-
-
-
 
     def __connnect_to_all_event(self, *args) -> None:
         """ Private method. No other function than updateGui or __call__ needs this function """
@@ -236,6 +252,11 @@ class Gui:
 
         print('Connect to drone: ', args)
 
+        data_found = fm.find_data('drone_data.json', args)
+        if data_found != '101':
+            print(f'Found data for drone {args}')
+            print('Drone MAC:', data_found['MAC_ADDRESS'])
+
     def __mission_event(self, *args) -> None:
         """ Private method. No other function than updateGui or __call__ needs this function """
         print('Start Mission')
@@ -247,13 +268,13 @@ class Gui:
         pass
 
     def __close_popup(self) -> None:
-        self.drone_name.hide()
-        self.drone_mac.hide()
-        self.drone_type.hide()
-        self.drone_ip.hide()
-        self.drone_cancel.hide()
-        self.drone_confirm.hide()
-        self.drone_close.hide()
+        pygame_widgets.WidgetHandler.removeWidget(self.drone_name)
+        pygame_widgets.WidgetHandler.removeWidget(self.drone_mac)
+        pygame_widgets.WidgetHandler.removeWidget(self.drone_type)
+        pygame_widgets.WidgetHandler.removeWidget(self.drone_ip)
+        pygame_widgets.WidgetHandler.removeWidget(self.drone_cancel)
+        pygame_widgets.WidgetHandler.removeWidget(self.drone_confirm)
+        pygame_widgets.WidgetHandler.removeWidget(self.drone_close)
 
         # Enable buttons after popup is closed
         self.add_button.enable()
@@ -264,7 +285,6 @@ class Gui:
             self.connect_buttons[i][0].enable()
 
         self.reloadGui()
-        pygame.display.update()
         
     def __convert_tuple(self, tup: tuple) -> str:
         """ Converts a tuple to a string"""
@@ -287,4 +307,3 @@ class Gui:
         for i in range(len(reference)):
             reference[i].borderColour=(255, 0, 0)
             reference[i].borderThickness=0
-    

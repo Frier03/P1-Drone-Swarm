@@ -8,6 +8,7 @@ from pygame_widgets.button import Button
 from Interface import RenderMap
 from Interface import CalibrateMap
 from Interface import GUI
+import Interface.fileManager as fm
 from pygame_widgets.textbox import TextBox
 import pyautogui
 
@@ -40,7 +41,7 @@ class App:
         """Run the worker event loop for all other protocols (drone related stuff)"""
         while True:
             print('Worker: Ready')
-            sleep(60)
+            sleep(10)
 
 
     def run(self):
@@ -55,7 +56,6 @@ class App:
                     if event.type == QUIT:
                         App.running = False
             
-                
                 # Call once every loop to allow widgets to render and listen
                 pygame_widgets.update(pygame.event.get())
                 
