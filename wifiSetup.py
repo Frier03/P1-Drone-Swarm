@@ -185,6 +185,7 @@ class DroneConnector():
                     macsHotspot.remove(m)
 
             # Call GUI
+            #if self.connectedDrones != macsHotspot: # If the list has changed, we want to update it in our GUI by calling callback
             callback(macsHotspot)
 
             #Update so other modules knows what methods are connected
