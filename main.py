@@ -29,7 +29,7 @@ class App:
 
         # Initialize interface classes
         self.gui = GUI.Gui(self.screen, pygame.event.get())
-
+        
         App.running = True
 
 

@@ -9,6 +9,7 @@ from pygame_widgets.selection import Radio
 import re
 import Interface.fileManager as fm
 from wifiSetup import DroneConnector
+from time import sleep
 
 #https://pygamewidgets.readthedocs.io/en/latest/widgets/toggle/
 class Gui:
@@ -20,8 +21,7 @@ class Gui:
         self.selected_value = None
         self.drone_img = pygame.image.load('Interface/drone.png').convert()
 
-        self.DC = DroneConnector()
-
+        self.DC = DroneConnector(self.update_status)
 
     def __call__(self) -> None:
         """Load GUI once every call on class"""
@@ -58,6 +58,12 @@ class Gui:
     
     def reloadGui(self):
         self.__initialize()
+
+        # Call once to allow widgets to render
+        pygame_widgets.update(pygame.event.get())
+                
+        # Update now all changes from above to the screen
+        pygame.display.update()
 
     def __show_custom_popup(self, width=None, height=None, title=None):
         # Font render
@@ -113,8 +119,6 @@ class Gui:
         # Make Button for "X" - Close Popup Menu
         self.drone_close = self.__add_button(value='Close', y=75, x=width+330, w=50, h=20, shadowDistance=0, inactiveColour=(220, 220, 220), radius=20, fontsize=15, execfunction=self.__close_popup)
 
-        # Make Button for "Confirm"
-
         # This while loop is necessary so that the TextBox can get events and updates.
         while True:
             # Call once every loop to allow widgets to render and listen
@@ -154,9 +158,23 @@ class Gui:
                 self.drone_img = pygame.transform.smoothscale(self.drone_img, (60, 60))
                 self.screen.blit(self.drone_img, (x+2, y+13))
 
-                # Draw Connect Button (Store each button in a list, so we know which button is pressed)
-                button = self.__add_button(value='Connect', x=295, y=y+12, w=40,h=20, fontsize=14, radius=2, shadowDistance=1, execfunction=execfuntion, execfunctionParams = values[key]['NAME'])
-                self.connect_buttons.append([button, values[key]['NAME']])
+                # Check what status on drone is on (Connect, Connecting... or Connected)
+                if values[key]['STATUS'] == 'Connect':
+                    # Draw Connect Button (Store each button in a list, so we know which button is pressed)
+                    button = self.__add_button(value='Connect', x=295, y=y+12, w=40,h=20, fontsize=14, radius=2, shadowDistance=1, execfunction=execfuntion, execfunctionParams = values[key]['NAME'])
+                    self.connect_buttons.append([button, values[key]['NAME']])
+                elif values[key]['STATUS'] == 'Connecting':
+                    # Draw Text
+                    self.__add_text(x=275, y=y+12, fontsize=12, value='Connecting...', color=(205, 205, 80), fontname='BostonBold')
+
+                elif values[key]['STATUS'] == 'Connected':
+                    # Draw Text
+                    self.__add_text(x=275, y=y+12, fontsize=12, value='Connected', color=(0, 255, 0), fontname='BostonBold')
+
+                elif values[key]['STATUS'] == 'Failed':
+                    # Draw Text
+                    self.__add_text(x=275, y=y+12, fontsize=12, value='Failed', color=(255, 0, 0), fontname='BostonBold')
+
 
                 y+=height+10
         self.__adapter_y = y
@@ -202,6 +220,7 @@ class Gui:
         self.connectall_button.disable()
         self.stop_button.disable()
         self.mission_button.disable()
+
         for i in range(len(self.connect_buttons)):
             self.connect_buttons[i][0].disable()
 
@@ -253,7 +272,11 @@ class Gui:
         # Convert tuple (args) to str
         args = self.__convert_tuple(args)
 
-        print('Connect to drone: ', args)
+        # Change button from Connect -> Connecting...
+        fm.edit_data('drone_data.json', args, 'STATUS', 'Connecting')
+
+        # Reload GUI
+        self.reloadGui()
 
         data_found = fm.find_data('drone_data.json', args)
         if data_found != '101':
@@ -261,18 +284,31 @@ class Gui:
             print('Drone MAC:', data_found['MAC_ADDRESS'])
             dMAC = data_found['MAC_ADDRESS'].replace('-', '')[-6:]
 
+            
             print([i.ssid for i in self.DC.findDrones()])
             if self.DC.calibrateDrone(dMAC):
                 print("Connection succeded")
+
+                # Change from Connecting... -> Connected (green color)
+                fm.edit_data('drone_data.json', args, 'STATUS', 'Connected')
             else:
                 print("Not calibrated!?")
+
+                # Change from Connecting... -> Failed! (default colo)
+                fm.edit_data('drone_data.json', args, 'STATUS', 'Failed')
+                
+                # Reload GUI
+                self.reloadGui()
+                sleep(1)
+
+                # Change from Connecting... -> Connect (default colo)
+                fm.edit_data('drone_data.json', args, 'STATUS', 'Connect')
+
+            # Reload GUI
+            self.reloadGui()
+
             self.DC.connectWifi(self.DC.defaultWifi)
             self.DC.waitForConnection()
-
-
-        
-
-
 
     def __mission_event(self, *args) -> None:
         """ Private method. No other function than updateGui or __call__ needs this function """
@@ -312,7 +348,7 @@ class Gui:
 
     def __validateInput(self, input: list, reference: list) -> bool:
         for i in range(len(input)):
-            if input[i] is None or input[i] is '' or input[i] is ' ':
+            if input[i] == None or input[i] == '' or input[i] == ' ':
 
                 # Change color of text field to red ish
                 reference[i].borderColour=(255, 0, 0)
@@ -324,3 +360,6 @@ class Gui:
         for i in range(len(reference)):
             reference[i].borderColour=(255, 0, 0)
             reference[i].borderThickness=0
+
+    def update_status(self, arg) -> None:
+        print(arg)

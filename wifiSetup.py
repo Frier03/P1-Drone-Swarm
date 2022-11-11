@@ -15,7 +15,7 @@ class DroneConnector():
     wifi_profile_folder = "wifi_profiles"   #Mappen hvor vores wifi-profiler er gemt
     hotspotSSID = "Bear"                    #
     hotspotPASS = "joinTheNet"              #Navnet og pass på dit hotspot som du laver
-    
+
     connectedDrones = []
 
 
@@ -31,12 +31,12 @@ class DroneConnector():
             return None
 
 
-    def __init__(self):
+    def __init__(self, callback):
         #Save your current wifi to connect back to later
         self.defaultWifi = self.getCurrentWifi()
 
         #Constantly update connectedDrones[] with the currently online drones
-        T = Thread(target=self.getConnectedDrones)
+        T = Thread(target=self.getConnectedDrones, args=(callback, ))
         T.daemon = True
         T.start()
 
@@ -163,8 +163,9 @@ class DroneConnector():
 
 
     #Bliver lavet en thread af denne
-    def getConnectedDrones(self):
+    def getConnectedDrones(self, callback):
         while True:
+
             # Hotspot is always on 192.168.137.0/24
             arp_a_regex = r"""(192\.168\.137\.[0-9]{0,3}) *([0-9a-z-]*)  """
 
@@ -172,10 +173,9 @@ class DroneConnector():
             arping = arping.decode('utf-8').replace(" \r","")
             macsHotspot = re.findall(arp_a_regex, arping)
             # macsHotspot = [(192.168.137.36, 34-d2-62-f2-51-f6), (ip, mac)]
-
             # Remove the subnet entry
-            macsHotspot.remove(('192.168.137.255', 'ff-ff-ff-ff-ff-ff'))
-            
+            #  macsHotspot.remove(('192.168.137.255', 'ff-ff-ff-ff-ff-ff'))
+
             for m in macsHotspot[:]:            #Lav en ny kopi for ikke at slette i macsHotspot mens vi itererer i den. Spørg Bjørn hvis forvirret
                 pingCommand = f"ping -w 500 {m[0]}"
                 #print(pingCommand)
@@ -183,9 +183,13 @@ class DroneConnector():
                 pinging = pinging.stdout.decode('utf-8').replace(" \r","")
                 if "Received = 0" in pinging:
                     macsHotspot.remove(m)
-            sleep(0.1)
+
+            # Call GUI
+            callback(macsHotspot)
+
             #Update so other modules knows what methods are connected
             self.connectedDrones = macsHotspot
+            sleep(0.1)
 
 
 

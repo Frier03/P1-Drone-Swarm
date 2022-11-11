@@ -9,12 +9,13 @@ def insert_data(file_name, data):
             'Battery(%)': 0,
             'POS_X': 0,
             'POS_Y': 0,
-            'STATUS': 'idle',
+            'MISSION_STATUS': 'idle',
             'MAC_ADDRESS': data[1],
             'CURRENT_IP': data[3],
             'TYPE': data[2],
             'SSID': '',
-            'NAME': data[0]
+            'NAME': data[0],
+            'STATUS': 'Connect'
         }
     }
 
@@ -50,6 +51,24 @@ def find_data(file_name, arg):
     except Exception as e:
         print('Unwanted Error Occurred', e)
         return '101'
+
+    
+def edit_data(file_name, *args):
+    try:
+        with open(f'{file_name}', 'r') as r:
+            data = json.load(r)
+            # Locate arg and return its object
+            for key, value in data.items():
+                if data[key]['NAME'] == args[0]:
+                    data[key][args[1]] = args[2]
+            
+            # Write back to the file
+            with open(f'{file_name}', 'w') as w:
+                json.dump(data, w)
+
+    except Exception as e:
+        print('Unwanted Error Occurred', e)
+        return '101' 
 
 def request_data(file_name):
     try:
