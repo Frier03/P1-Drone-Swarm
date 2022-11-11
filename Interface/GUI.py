@@ -180,6 +180,9 @@ class Gui:
                     # Draw Text
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Failed', color=(255, 0, 0), fontname='BostonBold')
 
+                elif values[key]['STATUS'] == 'Disconnected':
+                    # Draw Text
+                    self.__add_text(x=260, y=y+12, fontsize=12, value='Disconnected', color=(255, 0, 0), fontname='BostonBold')
 
                 y+=height+10
         self.__adapter_y = y
@@ -289,22 +292,20 @@ class Gui:
             print('Drone MAC:', data_found['MAC_ADDRESS'])
             dMAC = data_found['MAC_ADDRESS'].replace('-', '')[-6:]
 
-            
-            print([i.ssid for i in self.DC.findDrones()])
             if self.DC.calibrateDrone(dMAC):
-                print("Calibrated succeded")
+                #print("Calibrated succeded")
 
                 # Change from Connecting... -> Connected (green color)
                 fm.edit_data('drone_data.json', args, 'STATUS', 'Calibrated')
             else:
-                print("Not calibrated!?")
+                #print("Not calibrated!?")
 
                 # Change from Connecting... -> Failed! (default colo)
                 fm.edit_data('drone_data.json', args, 'STATUS', 'Failed')
                 
                 # Reload GUI
                 self.reloadGui()
-                sleep(1)
+                sleep(2)
 
                 # Change from Connecting... -> Connect (default colo)
                 fm.edit_data('drone_data.json', args, 'STATUS', 'Connect')
@@ -367,7 +368,6 @@ class Gui:
             reference[i].borderThickness=0
 
     def update_status(self, arg: list) -> None:
-        print(arg)
         """ Updates Drone Status depending on the paramater arg (list)"""
         current_drones = arg
         
@@ -379,30 +379,32 @@ class Gui:
                 if i[1] == j[1]:
                     just_disconnected.remove(j)
                     just_connected.remove(i)
-                    
+        
+        if len(just_connected) > 0: print("New connection", just_connected)
+        if len(just_disconnected) > 0: print("Disconnected", just_disconnected)
 
-        print('Connected Drones:', just_connected)
-        print('Disconnected Drones:', just_disconnected)
         for i in range(len(just_connected)):
             raw_mac = just_connected[i][1]
             mac = raw_mac[-8:]
 
             # Get Tello Name from mac
-            tello_drone = fm.find_name_by_mac('drone_data.json', mac)
+            tello_drone = fm.find_name_by_mac('drone_data.json', mac.upper())
 
             # Edit Tello Drone's status to Connected by Tello Name
             fm.edit_data('drone_data.json', tello_drone, 'STATUS', 'Connected')
 
         
         for i in range(len(just_disconnected)):
-            raw_mac = just_connected[i][1]
+            raw_mac = just_disconnected[i][1]
             mac = raw_mac[-8:]
 
             # Get Tello Name from mac
-            tello_drone = fm.find_name_by_mac('drone_data.json', mac)
+            tello_drone = fm.find_name_by_mac('drone_data.json', mac.upper())
 
             # Edit Tello Drone's status to Connected by Tello Name
             fm.edit_data('drone_data.json', tello_drone, 'STATUS', 'Disconnected')
+
+        #self.reloadGui()
 
         self.old_drones = current_drones
 

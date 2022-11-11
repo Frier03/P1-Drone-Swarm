@@ -19,17 +19,6 @@ class DroneConnector():
     connectedDrones = []
 
 
-    @privatemethod
-    def getCurrentWifi(self):
-        """Returns your currently connected Wifi"""
-        wifi = subprocess.check_output("netsh wlan show interfaces")
-        wifi = wifi.decode('utf-8').replace(" \r","")
-        currentWifi = re.findall(r"(?:Profile *: )(.*)\n", wifi)
-        if len(currentWifi) > 0:
-            return currentWifi[0]       #Return e.g. "eduroam"
-        else:
-            return None
-
 
     def __init__(self, callback):
         #Save your current wifi to connect back to later
@@ -40,6 +29,17 @@ class DroneConnector():
         T.daemon = True
         T.start()
 
+
+    @privatemethod
+    def getCurrentWifi(self):
+        """Returns your currently connected Wifi"""
+        wifi = subprocess.check_output("netsh wlan show interfaces")
+        wifi = wifi.decode('utf-8').replace(" \r","")
+        currentWifi = re.findall(r"(?:Profile *: )(.*)\n", wifi)
+        if len(currentWifi) > 0:
+            return currentWifi[0]       #Return e.g. "eduroam"
+        else:
+            return None
 
     #@privatemethod
     def connectWifi(self, SSID):
@@ -165,7 +165,6 @@ class DroneConnector():
     #Bliver lavet en thread af denne
     def getConnectedDrones(self, callback):
         while True:
-
             # Hotspot is always on 192.168.137.0/24
             arp_a_regex = r"""(192\.168\.137\.[0-9]{0,3}) *([0-9a-z-]*)  """
 
@@ -245,6 +244,7 @@ class DroneConnector():
         tello_address = ('192.168.10.1', 8889)      #HOST AND PORT FOR TELLO
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(3)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)         #FRA STACKOVERFLOW. https://stackoverflow.com/questions/41208720/python-sockets-not-really-closing
         s.bind(locaddr)
 
         #KEEPING TRACK OF DRONE CONNECTION
@@ -252,9 +252,10 @@ class DroneConnector():
 
         # First make it enter SDK command mode
         print("Sending <command>", end="")
+        
         for i in range(5):
-            s.sendto('command'.encode('utf-8'), tello_address)
             try:
+                s.sendto('command'.encode('utf-8'), tello_address)
                 response, ip = s.recvfrom(1024)
                 response = response.decode("utf-8")
                 if response == "ok":
@@ -284,6 +285,7 @@ class DroneConnector():
                 except Exception as e:
                     print("assumed to be <ok>")
                     break
+        
         
         s.close()
         return conEstablished           #True eller False
