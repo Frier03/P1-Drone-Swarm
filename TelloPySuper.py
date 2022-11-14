@@ -32,17 +32,16 @@ def euler_from_quaternion(x, y, z, w):
 class Drone(Tello):
     tello = None
     pos_x, pos_y, pos_z = 0, 0, 0
-    vel_x, vel_y, vel_z = 0, 0, 0
+    vel_x, vel_y = 0, 0
     
     ip = None
     mac = None
-    lastResponse = 0
-    lastAcceleration = 0
 
     def __init__(self, ip="192.168.10.1", port=9000, mac="aa:aa:aa:aa:aa"):        
         self.tello = Tello(port=port)
         #self.tello.subscribe(self.tello.EVENT_FLIGHT_DATA, self.handler)
         self.tello.subscribe(self.tello.EVENT_LOG_DATA, self.handler)
+        self.tello.subscribe(self.tello.EVENT_FLIGHT_DATA, self.handler)
         self.tello.set_loglevel(Tello.LOG_WARN)
 
         self.tello.tello_addr = (ip, 8889)
@@ -52,30 +51,40 @@ class Drone(Tello):
         self.ip = ip
         self.mac = mac
 
-
+    
+    lastResponse = 0
+    lastAcceleration = 0
     def handler(self, event, sender, data, **args):
-        drone = sender
+        if event == Tello.EVENT_FLIGHT_DATA:
+            self.pos_z = data.height                #protocol.py -> FlightData.height
+            
+        if event == Tello.EVENT_LOG_DATA:
+            #drone = sender
+            acc_x = data.imu.acc_x                  #protocol.py -> Logdata.LogImuAtti(log).acc_x
+            acc_y = data.imu.acc_x                  #protocol.py -> Logdata.LogImuAtti(log).acc_y
+            t = time() - self.lastResponse
 
-        a = data.imu.acc_x
-        t = time() - self.lastResponse
+            #Only calculate if new values and if time is reasonable
+            if int(t) < 5 and acc_x != self.lastAcceleration:
+                #Convert quaternions to roll, pitch and yaw in degrees
+                roll, pitch, yaw = euler_from_quaternion(data.imu.q0, data.imu.q1, data.imu.q2, data.imu.q3)
+                #Legendary formula - Corrigate for gravity
+                realAccX = acc_x + (math.cos(math.radians(90-pitch)))
+                realAccY = acc_y + (math.cos(math.radians(90-yaw)))
+            
+                #Calculate velocity
+                self.vel_x = (realAccX * t) + self.vel_x
+                self.vel_y = (realAccY * t) + self.vel_y
+                
+                #Calculate position
+                self.pos_x = (0.5 * realAccX * (t**2) + self.vel_x * t) + self.pos_x
+                self.pos_y = (0.5 * realAccY * (t**2) + self.vel_y * t) + self.pos_y
+                
+                print("Custom X :", self.pos_x, "Y :", self.pos_y, "Z :", self.pos_z)
 
-        #We use pitch only
-        roll, pitch, yaw = euler_from_quaternion(data.imu.q0, data.imu.q1, data.imu.q2, data.imu.q3)
-        #Legendary formula
-        realAccX = a + (math.cos(math.radians(90-pitch)))
-        #print("RealX", realAccX, "| Acc |", a, "Pitch", pitch)
-        
-        if int(t) < 5 and a != self.lastAcceleration:
-            self.vel_x = (realAccX * t) + self.vel_x
-            self.pos_x = (0.5 * realAccX * (t**2) + self.vel_x * t) + self.pos_x
-            print("Custom VelX =", self.vel_x, "Custom PosX", self.pos_x)
-        else:
-            #print("Skipped")
-            pass
-
-        self.lastResponse = time()
-        self.lastAcceleration = a
-        
+            self.lastResponse = time()
+            self.lastAcceleration = acc_x
+            
         
         
 
