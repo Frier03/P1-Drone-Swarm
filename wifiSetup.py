@@ -294,5 +294,7 @@ class DroneConnector():
 
 if __name__ == "__main__":
     print("Import med DC = DroneConnector()")
+    DC = DroneConnector(print)
+    DC.calibrateDrone("F250C6")
 
 
