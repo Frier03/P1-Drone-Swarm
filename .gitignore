@@ -6,6 +6,7 @@
 
 #Pycache doesnt matter
 /__pycache__
+*.pyc
 
 #Bjørns lort basically
 /LORT
