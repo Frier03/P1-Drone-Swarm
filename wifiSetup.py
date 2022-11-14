@@ -192,9 +192,9 @@ class DroneConnector():
 
 
     ########################################################################
-    #
-    #   NEDENFOR ER PUBLIC FUNKTIONERNE MENT til AT BLIVE KALDT I GUI-en
-    #
+    #                                                                      #
+    #   NEDENFOR ER PUBLIC FUNKTIONERNE MENT til AT BLIVE KALDT I GUI-en   #
+    #                                                                      #
     ########################################################################
     def findDrones(self):
         #Sometimes if will only find 1 network. Keep trying until it works
