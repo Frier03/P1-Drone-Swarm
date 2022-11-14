@@ -9,3 +9,7 @@ regex
 winwifi
 access_modifiers
 
+#Tello Framework
+# tellopy # 0.7.0 FROM GITHUB
+djitellopy
+
