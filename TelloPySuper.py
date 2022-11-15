@@ -29,13 +29,13 @@ def euler_from_quaternion(x, y, z, w):
     return math.degrees(roll_x), math.degrees(pitch_y), math.degrees(yaw_z)
 
 
-class Drone(Tello):    
+class Drone(Tello):
 
     def __init__(self, ip="192.168.10.1", port=9000, mac="aa:aa:aa:aa:aa"):        
         self.tello = Tello(port=port)
         #self.tello.subscribe(self.tello.EVENT_FLIGHT_DATA, self.handler)
-        self.tello.subscribe(self.tello.EVENT_LOG_DATA, self.handler)
-        self.tello.subscribe(self.tello.EVENT_FLIGHT_DATA, self.handler)
+        self.tello.subscribe(self.tello.EVENT_LOG_DATA, self.dataHandler)
+        self.tello.subscribe(self.tello.EVENT_FLIGHT_DATA, self.dataHandler)
         #self.tello.subscribe(self.tello.EVENT_CONNECTED, self.connectedMethod)     #Til rapporten
         #self.tello.subscribe(self.tello.EVENT_DISCONNECTED, self.connectedMethod)  #Dette burde vi IKKE gøre
         self.tello.set_loglevel(Tello.LOG_WARN)
@@ -46,6 +46,7 @@ class Drone(Tello):
 
         #Custom variables -----------------------
         self.mac = mac
+        self.calibrated = False
         self.pos_x, self.pos_y, self.pos_z = 0, 0, 0
         self.vel_x, self.vel_y = 0, 0
 
@@ -57,7 +58,14 @@ class Drone(Tello):
         self.NOCTPET = 200               #Number of calibrations to perform each time
         self.avgACC = (0, 0, 0)
         self.avgROT = (0, 0, 0)
+        self.avgVEL = (0, 0, 0)
+        self.avgPOS = (0, 0, 0)
         self.CalibrateAcceleration()
+
+        #Delete me
+        self.sum1 = 0
+        self.sum2 = 0
+        self.sum3 = 0
 
 
     def CalibrateAcceleration(self):
@@ -66,7 +74,7 @@ class Drone(Tello):
 
     
     lastResponse, lastAcceleration = 0, 0
-    def handler(self, event, sender, data, **args):
+    def dataHandler(self, event, sender, data, **args):
         if event == Tello.EVENT_FLIGHT_DATA:
             #drone = sender
             self.pos_z = data.height                #protocol.py -> FlightData.height
@@ -74,55 +82,104 @@ class Drone(Tello):
             
         
         if event == Tello.EVENT_LOG_DATA:
-            
-            if self.calibrateCounter > 0:
-                if self.calibrateCounter % 100 == 0 or (self.calibrateCounter % 10 == 0 and self.calibrateCounter <= 100):
-                    print("Calibrating: ", self.calibrateCounter)
-                #Acceleration
-                ax, ay, az = data.imu.acc_x, data.imu.acc_y, data.imu.acc_z
-                self.avgACC = (self.avgACC[0] + ax/self.NOCTPET, self.avgACC[1] + ay/self.NOCTPET, self.avgACC[2] + az/self.NOCTPET)
+            t = time() - self.lastResponse
 
-                #Rotation
-                rr, rp, ry = euler_from_quaternion(data.imu.q0, data.imu.q1, data.imu.q2, data.imu.q3)
-                self.avgROT = (self.avgROT[0] + rr/self.NOCTPET, self.avgROT[1] + rp/self.NOCTPET, self.avgROT[2] + ry/self.NOCTPET)
+            #Only calculate if new values and if time is reasonable
+            if int(t) < 5:# and data.imu.acc_x != self.lastAcceleration:
+                
+                if not self.calibrated:
+                    if self.calibrateCounter % 50 == 0:
+                        print(self.calibrateCounter)
+                    
+                    ax = data.imu.acc_x
+                    ay = data.imu.acc_y
+                    az = data.imu.acc_z
+                    rr, rp, ry = euler_from_quaternion(data.imu.q0, data.imu.q1, data.imu.q2, data.imu.q3)
 
-                self.calibrateCounter -= 1
-                #print("Acc avgACC %20s ." % (self.avgACC,))
-            else:
-                t = time() - self.lastResponse
+                    if 200 >= self.calibrateCounter > 100: #ACCELERATION AND ROTATION
+                        nor = 100 # number of runs
+                        self.avgACC = (self.avgACC[0] + data.imu.acc_x/nor, self.avgACC[1] + data.imu.acc_y/nor, self.avgACC[2] + data.imu.acc_z/nor)
+                        self.avgROT = (self.avgROT[0] + rr/nor, self.avgROT[1] + rp/nor, self.avgROT[2] + ry/nor)
+                        #print("avgACC %20s avgROT %20s." % (self.avgACC, self.avgROT))
 
-                #Only calculate if new values and if time is reasonable
-                if int(t) < 5 and data.imu.acc_x != self.lastAcceleration:
-                    acc_x = data.imu.acc_x - self.avgACC[0]                  #protocol.py -> Logdata.LogImuAtti(log).acc_x
-                    acc_y = data.imu.acc_y - self.avgACC[1]
-                    acc_z = data.imu.acc_z # - self.avgACC[2]
+                    elif 100 >= self.calibrateCounter > 50:  #VELOCITY
+                        nor = 50
+                        fax = ax - self.avgACC[0]
+                        fay = ay - self.avgACC[1]
+                        roll, pitch, yaw = euler_from_quaternion(data.imu.q0, data.imu.q1, data.imu.q2, data.imu.q3)
+                        fpitch = pitch - self.avgROT[1]
+                        fyaw = yaw - self.avgROT[2]
+                        rfax = fax - (math.cos(math.radians(90-fpitch))) * self.avgACC[2]
+                        rfay = fay - (math.cos(math.radians(90-fyaw))) * self.avgACC[2]
+                        vx = (rfax * t)
+                        vy = (rfay * t)
+                        self.avgVEL = (self.avgVEL[0] + vx/nor, self.avgVEL[1] + vy/nor, 0)
+                        #print(self.avgVEL)
 
-                    #Convert quaternions to roll, pitch and yaw in degrees
+
+                    elif 50 >= self.calibrateCounter:        #POSITION
+                        nor = 50
+                        fax = ax - self.avgACC[0]
+                        fay = ay - self.avgACC[1]
+                        roll, pitch, yaw = euler_from_quaternion(data.imu.q0, data.imu.q1, data.imu.q2, data.imu.q3)
+                        fpitch = pitch - self.avgROT[1]
+                        fyaw = yaw - self.avgROT[2]
+                        rfax = fax - (math.cos(math.radians(90-fpitch))) * self.avgACC[2]
+                        rfay = fay - (math.cos(math.radians(90-fyaw))) * self.avgACC[2]
+                        vx = (rfax * t) - self.avgVEL[0]
+                        vy = (rfay * t) - self.avgVEL[1]
+
+                        sx = (0.5 * rfax * t**2) + (vx * t)
+                        sy = (0.5 * rfay * t**2) + (vy * t)
+
+                        self.avgPOS = (self.avgPOS[0] + sx/nor, self.avgPOS[1] + sy/nor, 0)
+                        #print("AVGPOS =", self.avgPOS)
+
+
+                    if self.calibrateCounter == 1:
+                        self.calibrated = True
+                    
+                    self.calibrateCounter -= 1
+
+                else:
+                    ax = data.imu.acc_x              #protocol.py -> Logdata.LogImuAtti(log).acc_x
+                    ay = data.imu.acc_y
+                    az = data.imu.acc_z              #Dont adjust "gravity"              
+
+                    fax = ax - self.avgACC[0]
+                    fay = ay - self.avgACC[1]
                     roll, pitch, yaw = euler_from_quaternion(data.imu.q0, data.imu.q1, data.imu.q2, data.imu.q3)
+                    fpitch = pitch - self.avgROT[1]
+                    fyaw = yaw - self.avgROT[2]
+                    rfax = fax - (math.cos(math.radians(90-fpitch))) * self.avgACC[2]
+                    rfay = fay - (math.cos(math.radians(90-fyaw))) * self.avgACC[2]
+
+                    tolerance = 0.0025
+                    if rfax - tolerance > 0 or 0 > rfax + tolerance:
+                        self.vel_x = ((rfax * t) - self.avgVEL[0]) + self.vel_x
+                    else:
+                        self.vel_x = 0
                     
-                    roll -= self.avgROT[0]
-                    pitch -= self.avgROT[1]
-                    yaw -= self.avgROT[2]
-
-                    #Legendary formula - Corrigate for gravity
-                    realAccX = acc_x - (math.cos(math.radians(90-pitch))) * self.avgACC[2]
-                    realAccY = acc_y - (math.cos(math.radians(90-yaw))) * self.avgACC[2]        #Skal måske være roll
-                    #print("Acceleration %8f, %8f, %8f, %8f" % (abs(realAccX), abs(acc_x), acc_z, pitch))
-
-                    #Calculate velocity
-                    self.vel_x = (realAccX * t) + self.vel_x
-                    self.vel_y = (realAccY * t) + self.vel_y
-                    print("Velocity X:%8f    Y:%8f" % (self.vel_x, self.vel_y))
+                    if rfay - tolerance > 0 or 0 > rfay + tolerance:
+                        self.vel_y = ((rfay * t) - self.avgVEL[1]) + self.vel_y
+                    else:
+                        self.vel_y = 0
                     
-                    #Calculate position
-                    self.pos_x = (0.5 * realAccX * (t**2) + self.vel_x * t) + self.pos_x
-                    self.pos_y = (0.5 * realAccY * (t**2) + self.vel_y * t) + self.pos_y
+                    self.pos_x = (0.5 * rfax * t**2) + (self.vel_x * t) + self.pos_x
+                    self.pos_y = (0.5 * rfay * t**2) + (self.vel_y * t) + self.pos_y
+                    
+                    self.pos_x -= self.avgPOS[0]
+                    self.pos_y -= self.avgPOS[1]
 
-                    #print("Coords X:%8f | Y:%8f | Z:%8f" % (self.pos_x*10, self.pos_y*10, self.pos_z*10))
+                    #print("ACCEL X %8f   Y %8f    Z %8f" % (abs(rfax), abs(rfay), az))
+                    #print("VEL X %8f   Y %8f    Z %8f" % (self.vel_x, abs(self.vel_y), az))
+                    print("COORDS X %2f   Y %2f    Z %8f" % (round(self.pos_x*100, 2), round(self.pos_y*100, 2), self.pos_z))
+            else:
+                print("INVALID")
 
-                self.lastResponse = time()
-                self.lastAcceleration = data.imu.acc_x
-        
+            self.lastResponse = time()
+            self.lastAcceleration = data.imu.acc_x
+    
 
     def goUp(self, centimeter):
         self.tello.up(centimeter)
@@ -134,13 +191,14 @@ class Drone(Tello):
 
 if __name__ == "__main__":
 
-    drone1 = Drone(ip="192.168.137.150", port=9000)
+    drone1 = Drone(ip="192.168.137.56", port=9001)
     
     print("OBJECT MADE")
     for i in range(100):
-        sleep(1)
         #print("Drone battery =", drone1.tello)
         drone1.tello.land()
+        #print(drone1.tello.state)
+        sleep(1)
     
 
     #Swarm kan bruge
