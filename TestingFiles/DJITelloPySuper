@@ -1,0 +1,41 @@
+
+from djitellopy import Tello as dji
+from time import sleep, time
+import atexit
+import math
+import logging
+
+
+
+class Drone(dji):
+
+    def __init__(self, ip="192.168.10.1", port=9000, mac="aa:aa:aa:aa:aa"):        
+        self.dji = dji(host=ip.strip())
+        
+        self.dji.connect()
+
+        self.dji.enable_mission_pads()
+        self.dji.set_mission_pad_detection_direction(0)
+        
+
+        #Custom variables -----------------------
+        self.mac = mac
+        self.calibrated = False
+
+
+
+
+if __name__ == "__main__":
+    drone1 = Drone(ip="192.168.137.146")
+    #drone1.dji.LOGGER.setLevel(logging.DEBUG)
+    
+    print("OBJECT MADE")
+    sleep(2)
+    #drone1.dji.takeoff()
+    for i in range(10000):
+        print(i, drone1.dji.get_battery(), "| Mission pad:", drone1.dji.get_mission_pad_id(), drone1.dji.get_mission_pad_distance_x(), drone1.dji.get_mission_pad_distance_y(), drone1.dji.get_mission_pad_distance_z())
+        sleep(1)
+    
+    #drone1.dji.land()
+    
+    print("DONE")
