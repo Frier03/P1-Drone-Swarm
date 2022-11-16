@@ -65,8 +65,8 @@ class Drone(Tello):
         self.CalibrateAcceleration()
         self.standingStillCounter = 0
 
-        self.dillerx = []
-        self.dillery = []
+        self.listx = []
+        self.listy = []
 
 
     def CalibrateAcceleration(self):
@@ -172,7 +172,6 @@ class Drone(Tello):
 
                             self.standingStillCounter = 0
                             print(60*"-" + "RESET VELOCITY")
-                        #print("Same")
                     
                     self.pos_x = (0.5 * rfax * t**2) + (self.vel_x * t) + self.pos_x
                     self.pos_y = (0.5 * rfay * t**2) + (self.vel_y * t) + self.pos_y
@@ -186,8 +185,8 @@ class Drone(Tello):
 
 
                     self.pitch = fpitch
-                    self.dillerx.append(self.pos_x*100)
-                    self.dillery.append(self.pos_y*100)
+                    self.listx.append(self.pos_x*100)
+                    self.listy.append(self.pos_y*100)
 
 
 
@@ -199,12 +198,10 @@ class Drone(Tello):
         self.tello.up(centimeter)
         self.x += centimeter
 
-    def emergencyStop(self):
-        print("EMERGENCY STOP")
 
 
+#Brugt til plotting af graf for at få overblik over dronens koordinater når den flyver
 if __name__ == "__main__":
-
     drone1 = Drone(ip="192.168.137.146", port=9001)
     
     print("OBJECT MADE")
@@ -229,7 +226,7 @@ if __name__ == "__main__":
     sleep(5)
     print("PLOTTING NOW")
     import matplotlib.pyplot as plt
-    plt.plot(drone1.dillerx, drone1.dillery, 'bo', label="PATH")
+    plt.plot(drone1.listx, drone1.listy, 'bo', label="PATH")
     plt.legend()
     plt.show()
 
