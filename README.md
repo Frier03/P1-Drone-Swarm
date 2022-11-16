@@ -33,6 +33,7 @@ In order to contribute with git
 - `pygame >= 2.0.0`
 - 'pip install -r requirements.txt'
 If PyGame gives errors, try `pip install pygame --pre`
+
 If you want to try the class using TelloPy, install 'version 0.7.0' from github, not pip
 
 ## Guide
