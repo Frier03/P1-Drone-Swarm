@@ -7,11 +7,12 @@ from pygame_widgets.button import Button
 from pygame_widgets.dropdown import Dropdown
 from pygame_widgets.selection import Radio
 import re
+import Interface.RenderMap as rm
 import Interface.fileManager as fm
 from wifiSetup import DroneConnector
 from time import sleep
 
-#https://pygamewidgets.readthedocs.io/en/latest/widgets/toggle/
+#https://pygamewidgets.readthedocs.io/en
 class Gui:
     def __init__(self, screen, events) -> None:
         self.backgroundColor = (240, 240, 240)
@@ -56,7 +57,10 @@ class Gui:
 
         # Add Stop Button
         self.stop_button = self.__add_button(value='STOP', x=100, y=700, execfunction=self.__stop_event, radius=20, shadowColour=(230, 158, 159), inactiveColour=(239, 142, 143), pressedColour=(207, 117, 118), hoverColour=(245, 125, 126))
-    
+
+        # Add Map
+        rm.render_map(self, screen=self.screen)
+
     def reloadGui(self):
         self.__initialize()
 
@@ -404,11 +408,8 @@ class Gui:
             # Edit Tello Drone's status to Connected by Tello Name
             fm.edit_data('drone_data.json', tello_drone, 'STATUS', 'Disconnected')
 
-        #self.reloadGui()
-
         self.old_drones = current_drones
 
-            
 
 
-            
+

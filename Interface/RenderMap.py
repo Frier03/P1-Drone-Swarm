@@ -1,89 +1,33 @@
-import pygame, json, time
-from itertools import cycle
+import pygame, json
 
-def render_map(self, fieldSize = None, mapDimensionW = 500, screen = None, screenDimensions = (None, None)) -> None:
+def render_map(self, screen = None, realtimeDimension=(2,2)) -> None:
     """Create grid and make map"""
 
-    mapW = mapDimensionW
+    # realtimeDimensions (2,2) [m] = 2x2 in meters
+    mapX, mapY = 400, 75
+    mapW, mapH = 600, 500
+    rad = 2
+    shadowDistance = 2
 
-    self.textSize = int(fieldSize/3)
-    self.droneSize = int(fieldSize/10)
+    # Set the position of the map
+    mapStartpointX, mapStartpointY = mapX, mapY
+    mapEndpointX, mapEndpointY = mapX + mapW, mapY + mapH
 
-    # Calculate the relative mapH from the mapW.
-    mapH = mapW
-
-    # Create optional variables for the position of the map
-    bottom_right = (abs((screenDimensions[0] - mapW) - (fieldSize*2)), abs((screenDimensions[1] - mapH) - (fieldSize*2)))
-    bottom_left = (fieldSize, abs((screenDimensions[1] - mapH) - (fieldSize*2)))
-    top_right = (abs((screenDimensions[0] - mapW) - (fieldSize*2)), fieldSize)
-    top_left = (fieldSize, fieldSize)
-    mid = (abs(screenDimensions[0] - mapW) // 2, abs(screenDimensions[1] - mapH) // 2)
-
-    # Set the position of the map from optional variables
-    mapStartpointX, mapStartpointY = mid
-
-    # Create class variables
-    self.mapWidth = mapW
-    self.mapHeight = mapH 
-    self.mapX = mapStartpointX
-    self.mapY = mapStartpointY
+    #top left to top right x= -500
+    #top left to bottom right y= -625
 
     # Calculate the 0,0 position of the map to the end points based on the mapStartpoint X + mapwidth (also for the Y)
-    raw_coordinates_x = (mapStartpointX, mapStartpointX + (mapW + fieldSize)) # x1, x2: top left corner to top right corner coordinates
-    raw_coordinates_y = (mapStartpointX, mapStartpointY + (mapH + fieldSize)) # y1, y2: bottom left corner to bottom right corner
-    self.threshold_x = mapStartpointX # Use threshold when we have to convert our drone data coordinates to our grid
-    self.threshold_y = mapStartpointY # Use threshold when we have to convert our drone data coordinates to our grid
-    # We use converted_coordinates_x/y to check for out of bounds coordinates
-    converted_coordinates_x = (0, raw_coordinates_x[1] - raw_coordinates_x[0])
-    converted_coordinates_y = (0, raw_coordinates_y[1] - raw_coordinates_y[0])
-    #print(converted_coordinates_x, converted_coordinates_y)
-    #print(f'If the position from the drone is: (15, 88) then it would be converted to: ({15 + self.threshold_x}, {88 + self.threshold_y})')
+    self.threshold_x, self.threshold_y = mapStartpointX, mapStartpointY 
 
+    # Shadow
+    pygame.draw.rect(self.screen, (217,222,224, 10), pygame.Rect(mapX-shadowDistance, mapY-shadowDistance, mapW+(shadowDistance*2), mapH+(shadowDistance*2)),border_radius=rad)
 
-        
-    # Calculate the relative mapW and mapH to the mapStartpointX and mapStartpointY
-    mapW = mapW + mapStartpointX
-    mapH = mapH + mapStartpointY
+    # Box
+    pygame.draw.rect(self.screen, (255,255,255), pygame.Rect(mapX, mapY, mapW, mapH),border_radius=rad)
 
-    fieldColor = (107,107,107)
+    # Point at 0,0 
+    pygame.draw.circle(self.screen, (0,255,0), (self.threshold_x, self.threshold_y), 4)
 
-    # Create grid
-    for x in range(mapStartpointX, mapW+1, fieldSize):
-        for y in range(mapStartpointY, mapH+1, fieldSize):
-            mapField = pygame.Rect(x, y, fieldSize, fieldSize)
-            pygame.draw.rect(screen, fieldColor, mapField, 1)
-
-    # Calculate mid point
-    mid_x_coordinate = (mapStartpointX + mapW) // 2 + (fieldSize / 2)
-    mid_y_coordinate = (mapStartpointY + mapH) // 2 + (fieldSize / 2)
-
-    # Create outline for X
-    #pygame.draw.line(screen, (0, 150 ,0), (mid_x_coordinate, mapStartpointY), (mid_x_coordinate, mapH + fieldSize), 2)
-    # Create outline for Y
-    #pygame.draw.line(screen, (0, 150, 0), (mapStartpointX, mid_y_coordinate), (mapW + fieldSize, mid_y_coordinate), 2)
-    # Create outline for left
-    pygame.draw.line(screen, (0, 0 ,0), (mapStartpointX, mapStartpointY), (mapStartpointX, mapH + fieldSize), 1)
-    # Create outline for right
-    pygame.draw.line(screen, (0, 0 ,0), (mapW + fieldSize, mapStartpointY), (mapW + fieldSize, mapH + fieldSize), 1)
-    # Create outline for top
-    pygame.draw.line(screen, (0, 0 ,0), (mapStartpointX, mapStartpointY), (mapW + fieldSize, mapStartpointY), 2)
-    # Create outline for bottom
-    pygame.draw.line(screen, (0, 0 ,0), (mapStartpointX, mapH + fieldSize), (mapW + fieldSize, mapH + fieldSize), 2)
-
-
-    # Set self render_map axis
-    self.render_map_axis = ((mapStartpointX, mapStartpointY), (mapW + fieldSize, mapH + fieldSize)) 
-
-    # Set self render_map x,y
-    self.render_map_xy = (self.mapX, self.mapY)
-
-    # Update screen
-    pygame.display.update()
-
-def get_render_map_xy(self):
-    return self.render_map_xy
-def get_render_map_axis(self):
-    return self.render_map_axis
 
 def updatePoint(self, coordinates=(None, None), drone_id=None, screen=None, showSPD=True, showALT=True, showBAT=False, showSIG=False):
     if drone_id != None and coordinates != (None, None):
