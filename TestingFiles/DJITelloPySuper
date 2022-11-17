@@ -97,10 +97,23 @@ if __name__ == "__main__":
     #drone1.dji.LOGGER.setLevel(logging.DEBUG)
     drone.dji.LOGGER.setLevel(logging.WARNING)
 
+
+    import matplotlib.pyplot as plt
+
+    plt.ion()
+    plt.axis([-20, 100, -20, 100])
+
+    xlist = []
+    ylist = []
+
     for i in range(10000):
         print(drone.connected, drone.abs_x, drone.abs_y, drone.abs_z, drone.rotation, drone.totalSpeed)
-        sleep(0.5)
-    
+        #plt.plot(drone.abs_x, drone.abs_y)
+        if drone.connected and drone.isDataNew:
+            plt.scatter(drone.abs_y, drone.abs_x)
+            plt.draw()
+            plt.pause(0.05)
+        
     print("Done")
     sleep(1000)
 

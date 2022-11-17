@@ -1,15 +1,15 @@
-#GUI
+# GUI
 pygame
 pygame_widgets==1.1.0
 pyautogui
 
-#WifiSetup
+# WifiSetup
 requests
 regex
 winwifi
 access_modifiers
 
-#Tello Framework
-# tellopy # 0.7.0 FROM GITHUB
+# Tello Framework
+#tellopy    # 0.7.0 FROM GITHUB.
 djitellopy
 
