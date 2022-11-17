@@ -25,6 +25,10 @@ class Gui:
         self.DC = DroneConnector(self.update_status)
         self.old_drones = []
 
+        # Reset drone status from ... -> Connect
+        for drone in fm.request_data('drone_data.json'):
+            fm.edit_data('drone_data.json', drone, 'STATUS', 'Connect')
+
     def __call__(self) -> None:
         """Load GUI once every call on class"""
         self.__initialize()
@@ -86,7 +90,6 @@ class Gui:
 
         # Make Title Text
         self.__add_text(value=title, x=width-20, y=75, color=(0,0,0), fontsize=40)
-
 
         # Make Line under Title
         pygame.draw.line(self.screen, (180, 180, 180), (width+57, 128), (width+167, 128), width=2)
@@ -253,7 +256,6 @@ class Gui:
 
             # Validate MAC Address by using RegEx margin match - Can match pattern using -: (00:00:00-00-00-00)
             if re.search(r"((([0-9a-fA-F]){2}[-:]){5}([0-9a-fA-F]){2})", drone_mac) is not None:
-
                 # Add Data to database\
                 data = [drone_name, drone_mac, drone_type, drone_ip]
                 
@@ -261,16 +263,12 @@ class Gui:
                 res = fm.insert_data('drone_data.json', data)
 
                 if res == 'OK':
-
                     print('Closing POPUP')
                     # Close Pop up
                     self.__close_popup()
 
                     #TODO: Show Success text message on screen after completion
-
-
             else:
-
                 # Show red Border
                 self.drone_mac.borderThickness=1
 
@@ -291,7 +289,7 @@ class Gui:
         self.reloadGui()
 
         data_found = fm.find_data('drone_data.json', args)
-        if data_found != '101':
+        if data_found != '101': # Data was found
             print(f'Found data for drone {args}')
             print('Drone MAC:', data_found['MAC_ADDRESS'])
             dMAC = data_found['MAC_ADDRESS'].replace('-', '')[-6:]
@@ -347,6 +345,7 @@ class Gui:
         for i in range(len(self.connect_buttons)):
             self.connect_buttons[i][0].enable()
 
+        # Reload GUI
         self.reloadGui()
         
     def __convert_tuple(self, tup: tuple) -> str:
@@ -366,7 +365,7 @@ class Gui:
                 return False
         return True
 
-    def __reset_textbox_colors(self, reference: list):
+    def __reset_textbox_colors(self, reference: list) -> None:
         for i in range(len(reference)):
             reference[i].borderColour=(255, 0, 0)
             reference[i].borderThickness=0
@@ -394,9 +393,8 @@ class Gui:
             # Get Tello Name from mac
             tello_drone = fm.find_name_by_mac('drone_data.json', mac.upper())
 
-            # Edit Tello Drone's status to Connected by Tello Name
+            # Edit Tello Drone's status to Connected
             fm.edit_data('drone_data.json', tello_drone, 'STATUS', 'Connected')
-
         
         for i in range(len(just_disconnected)):
             raw_mac = just_disconnected[i][1]
@@ -409,7 +407,3 @@ class Gui:
             fm.edit_data('drone_data.json', tello_drone, 'STATUS', 'Disconnected')
 
         self.old_drones = current_drones
-
-
-
-
