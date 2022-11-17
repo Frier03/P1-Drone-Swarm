@@ -3,12 +3,6 @@ import json, time
 def insert_data(file_name, data):
     data_object = {
         data[0]: {
-            'SPD(m/s)': 0,
-            'ALT(m/s)': 0,
-            'Signal(%)': 0,
-            'Battery(%)': 0,
-            'POS_X': 0,
-            'POS_Y': 0,
             'MISSION_STATUS': 'idle',
             'MAC_ADDRESS': data[1],
             'CURRENT_IP': data[3],
