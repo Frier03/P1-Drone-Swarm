@@ -4,11 +4,9 @@ import pygame_widgets
 import pygame_widgets
 from pygame_widgets.textbox import TextBox
 from pygame_widgets.button import Button
-from pygame_widgets.dropdown import Dropdown
-from pygame_widgets.selection import Radio
 import re
-import Interface.RenderMap as rm
-import Interface.fileManager as fm
+from . import RenderMap as rm
+from . import fileManager as fm
 from wifiSetup import DroneConnector
 from time import sleep
 
@@ -25,9 +23,16 @@ class Gui:
         self.DC = DroneConnector(self.update_status)
         self.old_drones = []
 
+        # Init Drone Animation for each drone (groups)
+        self.groups = []
+
         # Reset drone status from ... -> Connect
         for drone in fm.request_data('drone_data.json'):
+            sprite = rm.Sprite()
+            group = pygame.sprite.Group(sprite)
+            self.groups.append(group)
             fm.edit_data('drone_data.json', drone, 'STATUS', 'Connect')
+
 
     def __call__(self) -> None:
         """Load GUI once every call on class"""
@@ -63,7 +68,7 @@ class Gui:
         self.stop_button = self.__add_button(value='STOP', x=100, y=700, execfunction=self.__stop_event, radius=20, shadowColour=(230, 158, 159), inactiveColour=(239, 142, 143), pressedColour=(207, 117, 118), hoverColour=(245, 125, 126))
 
         # Add Map
-        rm.render_map(self, screen=self.screen)
+        rm.render_map(self, screen=self.screen, sprite_groups=self.groups)
 
     def reloadGui(self):
         self.__initialize()
@@ -290,8 +295,6 @@ class Gui:
 
         data_found = fm.find_data('drone_data.json', args)
         if data_found != '101': # Data was found
-            print(f'Found data for drone {args}')
-            print('Drone MAC:', data_found['MAC_ADDRESS'])
             dMAC = data_found['MAC_ADDRESS'].replace('-', '')[-6:]
 
             if self.DC.calibrateDrone(dMAC):
