@@ -9,6 +9,7 @@ from . import RenderMap as rm
 from . import fileManager as fm
 from wifiSetup import DroneConnector
 from time import sleep
+from Swarm import Swarm
 
 #https://pygamewidgets.readthedocs.io/en
 class Gui:
@@ -20,7 +21,8 @@ class Gui:
         self.selected_value = None
         self.drone_img = pygame.image.load('Interface/drone.png').convert()
 
-        self.DC = DroneConnector(self.update_status)
+        self.SC = Swarm()
+        self.DC = DroneConnector(self.SC.updateConnections)
         self.old_drones = []
 
         # Init Drone Animation for each drone (groups)
@@ -372,41 +374,3 @@ class Gui:
         for i in range(len(reference)):
             reference[i].borderColour=(255, 0, 0)
             reference[i].borderThickness=0
-
-    def update_status(self, arg: list) -> None:
-        """ Updates Drone Status depending on the paramater arg (list)"""
-        current_drones = arg
-        
-        just_connected = current_drones[:]
-        just_disconnected = self.old_drones[:]
-
-        for i in current_drones:
-            for j in self.old_drones:
-                if i[1] == j[1]:
-                    just_disconnected.remove(j)
-                    just_connected.remove(i)
-        
-        if len(just_connected) > 0: print("New connection", just_connected)
-        if len(just_disconnected) > 0: print("Disconnected", just_disconnected)
-
-        for i in range(len(just_connected)):
-            raw_mac = just_connected[i][1]
-            mac = raw_mac[-8:]
-
-            # Get Tello Name from mac
-            tello_drone = fm.find_name_by_mac('drone_data.json', mac.upper())
-
-            # Edit Tello Drone's status to Connected
-            fm.edit_data('drone_data.json', tello_drone, 'STATUS', 'Connected')
-        
-        for i in range(len(just_disconnected)):
-            raw_mac = just_disconnected[i][1]
-            mac = raw_mac[-8:]
-
-            # Get Tello Name from mac
-            tello_drone = fm.find_name_by_mac('drone_data.json', mac.upper())
-
-            # Edit Tello Drone's status to Connected by Tello Name
-            fm.edit_data('drone_data.json', tello_drone, 'STATUS', 'Disconnected')
-
-        self.old_drones = current_drones
