@@ -194,6 +194,7 @@ class DroneConnector():
     #                                                                      #
     ########################################################################
     def findDrones(self):
+        """Finds nearby drones"""
         #Sometimes if will only find 1 network. Keep trying until it works
         for i in range(5):
             print("Scanning for nearby networks... ", end="")
@@ -213,7 +214,6 @@ class DroneConnector():
 
     def calibrateDrone(self, droneMAC):
         """Opretter forbindelse, sætter i SDK mode og forbinder dronen til hotspottet"""
-
         droneSSID = "TELLO-" + droneMAC
         self.connectToNewWifi(droneSSID)
 
@@ -287,12 +287,11 @@ class DroneConnector():
 
     
 
-def null(*args):
+def blackhole(*args):        #Once entered this function it will never leave
     pass
 if __name__ == "__main__":
     print("Import med DC = DroneConnector()")
-    DC = DroneConnector(null)
+    DC = DroneConnector(blackhole)
     print([i.ssid for i in DC.findDrones()])
     print("Drone connected =", DC.calibrateDrone("F251F6"))
-
 
