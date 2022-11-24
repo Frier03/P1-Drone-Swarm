@@ -65,14 +65,7 @@ class DroneConnector():
         print("")
         print(" --> Error?")
         return False
-    
 
-    @privatemethod
-    def getAvailableWifiNetworks(self):
-        """Gets nearby wifi networks with WinWifi. Takes an estimated 5 seconds"""
-        ww = winwifi.WinWiFi()
-        nearbyWIfis = ww.scan()
-        return nearbyWIfis
 
 
     @privatemethod
@@ -204,7 +197,9 @@ class DroneConnector():
         #Sometimes if will only find 1 network. Keep trying until it works
         for i in range(5):
             print("Scanning for nearby networks... ", end="")
-            wNetworks = self.getAvailableWifiNetworks()
+            ww = winwifi.WinWiFi()
+            wNetworks = ww.scan()
+            #print([i.ssid for i in wNetworks])
             print(f"({len(wNetworks)} networks found)")
             if len(wNetworks) > 1:
                 break
@@ -292,9 +287,11 @@ class DroneConnector():
 
     
 
+def null(*args):
+    pass
 if __name__ == "__main__":
     print("Import med DC = DroneConnector()")
-    DC = DroneConnector(print)
+    DC = DroneConnector(null)
     print([i.ssid for i in DC.findDrones()])
     print("Drone connected =", DC.calibrateDrone("F251F6"))
 
