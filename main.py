@@ -24,15 +24,12 @@ class App:
         
         App.running = True
 
-
-
     def run(self):
         """Run the main event loop."""
         try:
             while App.running:
                 # Load GUI
                 self.gui() # Calls "__call__" inside gui class
-                
                 for event in pygame.event.get():
                     if event.type == QUIT:
                         App.running = False
