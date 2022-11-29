@@ -20,6 +20,7 @@ class Gui:
         self.connect_buttons = list() # Holds each button on our custom adapter selection list
         self.selected_value = None
         self.drone_img = pygame.image.load('Interface/drone.png').convert()
+        self.popup_run = False
 
         self.SC = Swarm()
         self.DC = DroneConnector(self.SC.updateConnections)
@@ -135,7 +136,7 @@ class Gui:
         self.drone_close = self.__add_button(value='Close', y=75, x=width+330, w=50, h=20, shadowDistance=0, inactiveColour=(220, 220, 220), radius=20, fontsize=15, execfunction=self.__close_popup)
 
         # This while loop is necessary so that the TextBox can get events and updates.
-        while True:
+        while self.popup_run:
             # Call once every loop to allow widgets to render and listen
             pygame_widgets.update(pygame.event.get())
             # Update now all changes from above to the screen
@@ -246,6 +247,7 @@ class Gui:
         for i in range(len(self.connect_buttons)):
             self.connect_buttons[i][0].disable()
 
+        self.popup_run = True
         self.__show_custom_popup(width=600, height=375, title='Drone Overview')
     
     def __add_drone_to_data(self, *args) -> None:
@@ -350,6 +352,8 @@ class Gui:
         for i in range(len(self.connect_buttons)):
             self.connect_buttons[i][0].enable()
 
+        # Stop loop in popup
+        self.popup_run = False
         # Reload GUI
         self.reloadGui()
         
