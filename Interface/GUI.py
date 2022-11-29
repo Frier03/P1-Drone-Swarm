@@ -5,7 +5,6 @@ import pygame_widgets
 from pygame_widgets.textbox import TextBox
 from pygame_widgets.button import Button
 import re
-from . import RenderMap as rm
 from . import fileManager as fm
 from wifiSetup import DroneConnector
 from time import sleep
@@ -34,14 +33,13 @@ class Gui:
             obj = Drone(ip=data[key]['CURRENT_IP'], mac=data[key]['MAC_ADDRESS'])
             drones.update( {data[key]['NAME'] : obj} )
 
-            sprite = rm.Sprite()
+            sprite = Sprite()
             group = pygame.sprite.Group(sprite)
             self.groups.append(group)
 
         self.SC = Swarm(drones)
         #print(self.SC.drones['Tello EDU 1'].ip)
         self.DC = DroneConnector(self.SC.updateConnections)
-
 
     def __call__(self) -> None:
         """Load GUI once every call on class"""
@@ -77,7 +75,7 @@ class Gui:
         self.stop_button = self.__add_button(value='STOP', x=100, y=700, execfunction=self.__stop_event, radius=20, shadowColour=(230, 158, 159), inactiveColour=(239, 142, 143), pressedColour=(207, 117, 118), hoverColour=(245, 125, 126))
 
         # Add Map
-        rm.render_map(self, screen=self.screen, sprite_groups=self.groups)
+        self.render_map()
 
     def reloadGui(self):
         self.__initialize()
@@ -380,3 +378,72 @@ class Gui:
         for i in range(len(reference)):
             reference[i].borderColour=(255, 0, 0)
             reference[i].borderThickness=0
+
+    def render_map(self) -> None:
+        """Create grid and make map"""
+        mapX, mapY = 400, 85
+        mapW, mapH = 800, 600
+        rad = 2
+        shadowDistance = 2
+
+        # Set the position of the map
+        mapStartpointX, mapStartpointY = mapX, mapY
+        mapEndpointX, mapEndpointY = mapX + mapW, mapY + mapH
+
+        # Calculate the 0,0 position of the map to the end points
+        threshold_x, threshold_y = mapStartpointX, mapStartpointY 
+
+        # Draw Shadow
+        pygame.draw.rect(self.screen, (217,222,224, 10), pygame.Rect(mapX-shadowDistance, mapY-shadowDistance, mapW+(shadowDistance*2), mapH+(shadowDistance*2)),border_radius=rad)
+
+        # Draw Box
+        pygame.draw.rect(self.screen, (255,255,255), pygame.Rect(mapX, mapY, mapW, mapH),border_radius=rad)
+
+        # Get Each Drone id/name,position, yaw, battery, altitude, speed and connected status in a list?
+        drones = self.SC.drones      
+
+        drones['Tello EDU 1'].abs_x = 200
+
+        # Sprite groups [] for each drone
+        i=0
+        for key, value in drones.items():
+            drone_sprite = self.groups[i]
+            x, y = (drones[key].abs_x, drones[key].abs_y)
+            x, y = (x + threshold_x, y + threshold_y)
+            spd = drones[key].totalSpeed
+            alt = drones[key].abs_z
+            yaw = drones[key].rotation
+
+
+            drone_sprite.update(x, y)
+            drone_sprite.draw(self.screen)
+
+            if i < len(drones):
+                i+=1
+            else: i=0
+            
+
+class Sprite(pygame.sprite.Sprite):
+    def __init__(self):
+        super(Sprite, self).__init__()
+
+        drone0 = pygame.image.load('Interface/drone.png')
+        drone0 = pygame.transform.smoothscale(drone0, (80, 80))
+        drone1 = pygame.image.load('Interface/drone1.png')
+        drone1 = pygame.transform.smoothscale(drone1, (80, 80))
+        self.images = [drone0, drone1]
+        self.index = 0
+ 
+        self.image = self.images[self.index]
+ 
+        self.rect = pygame.Rect(0, 0, 150, 198)
+ 
+    def update(self, x, y):
+        self.index += 1
+ 
+        if self.index >= len(self.images):
+            self.index = 0
+        
+        self.image = self.images[self.index]
+        self.rect.x = x
+        self.rect.y = y
