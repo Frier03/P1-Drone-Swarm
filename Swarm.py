@@ -6,12 +6,11 @@ class Swarm:
     drones = []
     old_drones = []
 
-    def __init__(self):
-        pass
+    def __init__(self, drones: dict[str, Drone]):
+        self.drones: dict[str, Drone] = drones
 
     def updateConnections(self, current_drones):
         """ Updates Drone Status depending on the paramater arg (list)"""
-        print(current_drones)
         
         just_connected = current_drones[:]
         just_disconnected = self.old_drones[:]

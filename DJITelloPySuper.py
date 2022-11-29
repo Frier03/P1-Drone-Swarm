@@ -8,13 +8,14 @@ from threading import Thread
 
 
 class Drone():
-    def __init__(self, ip, mac="aa:aa:aa:aa:aa", distanceBetweenPads = 40):
+    def __init__(self, ip='0.0.0.0.0', mac="aa:aa:aa:aa:aa", distanceBetweenPads = 40):
         self.dji : dji = None
 
         #Custom variables -----------------------
-        self.ip = 0
+        self.ip = ip
         self.mac = mac
         self.connected = False
+        self.guiStatus: str = "Connect"
 
         self.abs_x = 0
         self.abs_y = 0

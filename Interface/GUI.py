@@ -10,6 +10,7 @@ from . import fileManager as fm
 from wifiSetup import DroneConnector
 from time import sleep
 from Swarm import Swarm
+from DJITelloPySuper import Drone
 
 #https://pygamewidgets.readthedocs.io/en
 class Gui:
@@ -22,19 +23,24 @@ class Gui:
         self.drone_img = pygame.image.load('Interface/drone.png').convert()
         self.popup_run = False
 
-        self.SC = Swarm()
-        self.DC = DroneConnector(self.SC.updateConnections)
-        self.old_drones = []
-
         # Init Drone Animation for each drone (groups)
         self.groups = []
 
-        # Reset drone status from ... -> Connect
-        for drone in fm.request_data('drone_data.json'):
+        # Create drone objects
+        drones: dict[str, Drone] = {}
+        data = fm.request_data('drone_data.json')
+
+        for key, _ in data.items():
+            obj = Drone(ip=data[key]['CURRENT_IP'], mac=data[key]['MAC_ADDRESS'])
+            drones.update( {data[key]['NAME'] : obj} )
+
             sprite = rm.Sprite()
             group = pygame.sprite.Group(sprite)
             self.groups.append(group)
-            fm.edit_data('drone_data.json', drone, 'STATUS', 'Connect')
+
+        self.SC = Swarm(drones)
+        #print(self.SC.drones['Tello EDU 1'].ip)
+        self.DC = DroneConnector(self.SC.updateConnections)
 
 
     def __call__(self) -> None:
@@ -175,27 +181,27 @@ class Gui:
                 self.screen.blit(self.drone_img, (x+2, y+13))
 
                 # Check what status on drone is on (Connect, Connecting... or Connected)
-                if values[key]['STATUS'] == 'Connect':
+                if self.SC.drones[values[key]['NAME']].guiStatus == 'Connect':
                     # Draw Connect Button (Store each button in a list, so we know which button is pressed)
                     button = self.__add_button(value='Connect', x=295, y=y+12, w=40,h=20, fontsize=14, radius=2, shadowDistance=1, execfunction=execfuntion, execfunctionParams = values[key]['NAME'])
                     self.connect_buttons.append([button, values[key]['NAME']])
-                elif values[key]['STATUS'] == 'Connecting':
+                elif self.SC.drones[values[key]['NAME']].guiStatus == 'Connecting...':
                     # Draw Text
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Connecting...', color=(205, 205, 80), fontname='BostonBold')
 
-                elif values[key]['STATUS'] == 'Connected':
+                elif self.SC.drones[values[key]['NAME']].guiStatus == 'Connected':
                     # Draw Text
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Connected', color=(0, 255, 0), fontname='BostonBold')
 
-                elif values[key]['STATUS'] == 'Calibrated':
+                elif self.SC.drones[values[key]['NAME']].guiStatus == 'Calibrated':
                     # Draw Text
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Calibrated', color=(168, 222, 96), fontname='BostonBold')
 
-                elif values[key]['STATUS'] == 'Failed':
+                elif self.SC.drones[values[key]['NAME']].guiStatus == 'Failed':
                     # Draw Text
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Failed', color=(255, 0, 0), fontname='BostonBold')
 
-                elif values[key]['STATUS'] == 'Disconnected':
+                elif self.SC.drones[values[key]['NAME']].guiStatus == 'Disconnected':
                     # Draw Text
                     self.__add_text(x=260, y=y+12, fontsize=12, value='Disconnected', color=(255, 0, 0), fontname='BostonBold')
 
@@ -291,33 +297,29 @@ class Gui:
         # Convert tuple (args) to str
         args = self.__convert_tuple(args)
 
-        # Change button from Connect -> Connecting...
-        fm.edit_data('drone_data.json', args, 'STATUS', 'Connecting')
+        # Change button from Connect -> Connecting... (inherit into swarm -> drones and change guiStatus data member)
+        self.SC.drones[args].guiStatus = 'Connecting...'
 
         # Reload GUI
         self.reloadGui()
 
-        data_found = fm.find_data('drone_data.json', args)
-        if data_found != '101': # Data was found
-            dMAC = data_found['MAC_ADDRESS'].replace('-', '')[-6:]
+        dMAC = self.SC.drones[args].mac
 
-            if self.DC.calibrateDrone(dMAC):
-                #print("Calibrated succeded")
+        if self.DC.calibrateDrone(dMAC):
+            #print("Calibrated succeded")
 
-                # Change from Connecting... -> Connected (green color)
-                fm.edit_data('drone_data.json', args, 'STATUS', 'Calibrated')
-            else:
-                #print("Not calibrated!?")
+            # Change from Connecting... -> Calibrating (green color)
+            self.SC.drones[args].guiStatus = 'Calibrating'
+        else:
+            # Change from Connecting... -> Failed! (default colo)
+            self.SC.drones[args].guiStatus = 'Failed'
+            
+            # Reload GUI
+            self.reloadGui()
+            sleep(2)
 
-                # Change from Connecting... -> Failed! (default colo)
-                fm.edit_data('drone_data.json', args, 'STATUS', 'Failed')
-                
-                # Reload GUI
-                self.reloadGui()
-                sleep(2)
-
-                # Change from Connecting... -> Connect (default colo)
-                fm.edit_data('drone_data.json', args, 'STATUS', 'Connect')
+            # Change from Connecting... -> Connect (default colo)
+            self.SC.drones[args].guiStatus = 'Connect'
 
             # Reload GUI
             self.reloadGui()
