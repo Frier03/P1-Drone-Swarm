@@ -52,15 +52,15 @@ class DroneConnector():
     #@privatemethod
     def waitForConnection(self):
         """Waits until a connection to www.google.com is established"""
-        print("[!] Searching for connection", end="")
+        #print("[!] Searching for connection", end="")
         for i in range(10):
             try:
                 r.get("https://www.google.com")
-                print(" --> Ok!")
+                #print(" --> Ok!")
                 return True
             except:
-                print(".", end="")
-
+                #print(".", end="")
+                pass
             sleep(1)
         print("")
         print(" --> Error?")
@@ -214,7 +214,9 @@ class DroneConnector():
 
     def calibrateDrone(self, droneMAC):
         """Opretter forbindelse, sætter i SDK mode og forbinder dronen til hotspottet"""
+        droneMAC = droneMAC.replace('-', '')[-6:]
         droneSSID = "TELLO-" + droneMAC
+        print(f"CALIBRATEDRONE( {droneMAC=} )")
         self.connectToNewWifi(droneSSID)
 
         #Wait until wifi is connected
