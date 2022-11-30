@@ -8,15 +8,16 @@ from threading import Thread
 
 
 class Drone():
-    def __init__(self, ip='0.0.0.0.0', mac="aa:aa:aa:aa:aa", distanceBetweenPads = 40):
+    def __init__(self, mac="aa:aa:aa:aa:aa", distanceBetweenPads = 40):
         self.dji : dji = None
 
         #Custom variables -----------------------
-        self.ip = ip
+        self.ip = 0
         self.mac = mac
         self.connected = False
-        self.guiStatus: str = "Connect"
+        self.guiStatus: str = "Connect"     #Connect, Disconnected, Connecting, Calibrated, Calibrating, Failed
 
+        self.mID = -1
         self.abs_x = 0
         self.abs_y = 0
         self.abs_z = 0
@@ -27,8 +28,6 @@ class Drone():
         self.lastSeenPad = 0
         self.isDataNew = False
         self.distanceBetweenPads = distanceBetweenPads
-        
-        self.setIp(ip)
 
         #Start position updater thread
         T = Thread(target=self.mainUpdater)
@@ -37,13 +36,15 @@ class Drone():
 
 
     def setIp(self, newIP):
-        if self.ip == newIP:        #Only change if new ip
-            return
-        
         self.connected = False
         self.ip = newIP
+
+        if self.dji:        #If already exists, delete before creating a new one
+            del self.dji
+
         self.dji = dji(host=newIP.strip(), retry_count=1)   #Generates an error after x (3) retries
-        self.dji.LOGGER.setLevel(logging.INFO)             #For debugging and output in terminal
+        self.dji.LOGGER.setLevel(logging.ERROR)              #For debugging and output in terminal
+        print(f"{self.ip=} {newIP=} {self.dji}")
         try:
             self.dji.connect()  #Is changed to timeout after 1 sec. Look package files
             #Connect generates an error if not connected
@@ -51,8 +52,9 @@ class Drone():
             self.dji.set_mission_pad_detection_direction(2)
             self.connected = True
             return True
-        except:
+        except Exception as e:
             return False
+
 
     def mainUpdater(self):
         while True:
@@ -63,36 +65,49 @@ class Drone():
                     self.battery = self.dji.get_battery()
 
                     #POSITION CALCULATIONS
-                    mID = self.dji.get_mission_pad_id()
+                    self.mID = self.dji.get_mission_pad_id()
                     x = self.dji.get_mission_pad_distance_x()
                     y = self.dji.get_mission_pad_distance_y()
                     z = self.dji.get_mission_pad_distance_z()
                     
-                    if mID != -1:               #If a pad is found
-                        xRow = (mID-1)//3       #Just think about. Its very easy to understand
-                        yRow = (mID-1) % 3
+                    if self.mID != -1:               #If a pad is found
+                        xRow = (self.mID-1)//3       #Just think about. Its very easy to understand
+                        yRow = (self.mID-1) % 3
                         
                         self.abs_x = self.distanceBetweenPads * xRow + -x
                         self.abs_y = self.distanceBetweenPads * yRow + -y
                         self.abs_z = z
 
-                        self.lastSeenPad = mID
+                        self.lastSeenPad = self.mID
                         self.isDataNew = True
-                        #print(mid, "Absolute", self.abs_x, "|", self.abs_y, "|", self.abs_z)
                     else:
                         self.isDataNew = False
                         #print("No pad?")
             except:
                 print("Is this updating the ip?")
-
-            sleep(0.1)
-
+            sleep(0.5)
 
 
 
 
-if __name__ == "__main__":
-    drone = Drone(ip="192.168.137.210")
+def plotCoords(drone):
+    # FOR PLOTTING coordinates
+    import matplotlib.pyplot as plt
+    plt.ion()
+    plt.axis([-20, 100, -20, 100])
+
+    xlist = []
+    ylist = []
+
+    for i in range(10000):
+        plt.plot(drone.abs_x, drone.abs_y)
+        if drone.connected and drone.isDataNew:
+            plt.scatter(drone.abs_y, drone.abs_x)
+            plt.draw()
+            plt.pause(0.05)
+        sleep(0.2)
+
+def testJump(drone):
     if drone.connected:
         print('Hello')
         sleep(1)
@@ -106,31 +121,16 @@ if __name__ == "__main__":
             print(f'Con={drone.connected:1} Bat:{drone.battery} | Mid={drone.lastSeenPad:3} | {drone.abs_x:2}, {drone.abs_y:2}, {drone.abs_z:2}')
             sleep(1)
             print('Well Done')
-            
-
         drone.dji.land()
-    
-    for i in range(500):
-        print(f'Con={drone.connected:1} Bat:{drone.battery} | Mid={drone.lastSeenPad:3} | {drone.abs_x:2}, {drone.abs_y:2}, {drone.abs_z:2}')
-        sleep(0.2)
         
 
-    
-    
 
+if __name__ == "__main__":
+    drone = Drone()
+    drone.setIp("192.168.137.25")
 
-    ## FOR PLOTTING coordinates
-    # import matplotlib.pyplot as plt
-    # plt.ion()
-    # plt.axis([-20, 100, -20, 100])
+    for i in range(500000):
+        print(f'Con={drone.connected:1} Bat:{drone.battery} | Mid={drone.lastSeenPad:3} | {drone.abs_x:2}, {drone.abs_y:2}, {drone.abs_z:2}')
+        sleep(0.1)
 
-    # xlist = []
-    # ylist = []
-
-    # for i in range(10000):
-    #     plt.plot(drone.abs_x, drone.abs_y)
-    #     if drone.connected and drone.isDataNew:
-    #         plt.scatter(drone.abs_y, drone.abs_x)
-    #         plt.draw()
-    #         plt.pause(0.05)
-    #     sleep(0.2)
+    drone.dji.end()
