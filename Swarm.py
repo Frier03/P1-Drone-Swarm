@@ -7,10 +7,14 @@ class Swarm:
     drones: list[Drone] = []
     old_drones = []    
 
+    def __init__(self, macs):
+        for m in macs:
+            self.drones.append( Drone(mac=m) )
+    
 
     def findDrone(self, mac):
         for drone in self.drones:
-            if drone.mac == mac:
+            if drone.mac.upper() == mac.upper():
                 return drone
         return False
 

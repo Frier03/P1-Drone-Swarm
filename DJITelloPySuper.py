@@ -44,7 +44,6 @@ class Drone():
 
         self.dji = dji(host=newIP.strip(), retry_count=1)   #Generates an error after x (3) retries
         self.dji.LOGGER.setLevel(logging.ERROR)              #For debugging and output in terminal
-        print(f"{self.ip=} {newIP=} {self.dji}")
         try:
             self.dji.connect()  #Is changed to timeout after 1 sec. Look package files
             #Connect generates an error if not connected

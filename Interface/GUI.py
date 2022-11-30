@@ -26,20 +26,18 @@ class Gui:
         self.groups = []
 
         # Create drone objects
-        drones: dict[str, Drone] = {}
         data = fm.request_data('drone_data.json')
-
+        droneMACS = []
         for key, _ in data.items():
-            obj = Drone(ip=data[key]['CURRENT_IP'], mac=data[key]['MAC_ADDRESS'])
-            drones.update( {data[key]['NAME'] : obj} )
-
             sprite = Sprite()
             group = pygame.sprite.Group(sprite)
             self.groups.append(group)
+            droneMACS.append(data[key]['MAC_ADDRESS'])
 
-        self.SC = Swarm(drones)
-        #print(self.SC.drones['Tello EDU 1'].ip)
+
+        self.SC = Swarm(droneMACS)
         self.DC = DroneConnector(self.SC.updateConnections)
+
 
     def __call__(self) -> None:
         """Load GUI once every call on class"""
@@ -178,31 +176,32 @@ class Gui:
                 self.drone_img = pygame.transform.smoothscale(self.drone_img, (60, 60))
                 self.screen.blit(self.drone_img, (x+2, y+13))
 
+
+                drone = self.SC.findDrone( values[key]['MAC_ADDRESS'] )
+
+                if drone.connected == True:
+                    self.__add_text(x=275, y=y+12, fontsize=12, value='Connected', color=(0, 255, 0), fontname='BostonBold')
+
                 # Check what status on drone is on (Connect, Connecting... or Connected)
-                if self.SC.drones[values[key]['NAME']].guiStatus == 'Connect':
+                elif drone.guiStatus == 'Connect':
                     # Draw Connect Button (Store each button in a list, so we know which button is pressed)
-                    button = self.__add_button(value='Connect', x=295, y=y+12, w=40,h=20, fontsize=14, radius=2, shadowDistance=1, execfunction=execfuntion, execfunctionParams = values[key]['NAME'])
-                    self.connect_buttons.append([button, values[key]['NAME']])
-                elif self.SC.drones[values[key]['NAME']].guiStatus == 'Connecting...':
+                    button = self.__add_button(value='Connect', x=295, y=y+12, w=40,h=20, fontsize=14, radius=2, shadowDistance=1, execfunction=execfuntion, execfunctionParams = drone.mac)
+                    self.connect_buttons.append([button, drone.mac])
+
+                elif drone.guiStatus == 'Connecting...':
                     # Draw Text
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Connecting...', color=(205, 205, 80), fontname='BostonBold')
 
-                elif self.SC.drones[values[key]['NAME']].guiStatus == 'Connected':
-                    # Draw Text
-                    self.__add_text(x=275, y=y+12, fontsize=12, value='Connected', color=(0, 255, 0), fontname='BostonBold')
-
-                elif self.SC.drones[values[key]['NAME']].guiStatus == 'Calibrated':
-                    # Draw Text
+                elif drone.guiStatus == 'Calibrated':
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Calibrated', color=(168, 222, 96), fontname='BostonBold')
 
-                elif self.SC.drones[values[key]['NAME']].guiStatus == 'Failed':
-                    # Draw Text
+                elif drone.guiStatus == 'Failed':
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Failed', color=(255, 0, 0), fontname='BostonBold')
 
-                elif self.SC.drones[values[key]['NAME']].guiStatus == 'Disconnected':
-                    # Draw Text
-                    self.__add_text(x=260, y=y+12, fontsize=12, value='Disconnected', color=(255, 0, 0), fontname='BostonBold')
+                #elif drone.guiStatus == 'Disconnected':
+                #    self.__add_text(x=260, y=y+12, fontsize=12, value='Disconnected', color=(255, 0, 0), fontname='BostonBold')
 
+                
                 y+=height+10
         self.__adapter_y = y
 
@@ -291,33 +290,30 @@ class Gui:
 
     def __connect_event(self, *args) -> None:
         """ Private method. No other function than updateGui or __call__ needs this function """
+        dMAC = "".join(args)            #Convert *args back to string
         
-        # Convert tuple (args) to str
-        args = self.__convert_tuple(args)
-
+        drone = self.SC.findDrone(dMAC)
         # Change button from Connect -> Connecting... (inherit into swarm -> drones and change guiStatus data member)
-        self.SC.drones[args].guiStatus = 'Connecting...'
+        drone.guiStatus = 'Connecting...'
+        
 
         # Reload GUI
         self.reloadGui()
 
-        dMAC = self.SC.drones[args].mac
-
         if self.DC.calibrateDrone(dMAC):
             #print("Calibrated succeded")
-
             # Change from Connecting... -> Calibrating (green color)
-            self.SC.drones[args].guiStatus = 'Calibrating'
+            drone.guiStatus = 'Calibrated'
         else:
             # Change from Connecting... -> Failed! (default colo)
-            self.SC.drones[args].guiStatus = 'Failed'
+            drone.guiStatus = 'Failed'
             
             # Reload GUI
             self.reloadGui()
             sleep(2)
 
             # Change from Connecting... -> Connect (default colo)
-            self.SC.drones[args].guiStatus = 'Connect'
+            drone.guiStatus = 'Connect'
 
             # Reload GUI
             self.reloadGui()
@@ -400,16 +396,16 @@ class Gui:
         pygame.draw.rect(self.screen, (255,255,255), pygame.Rect(mapX, mapY, mapW, mapH),border_radius=rad)
 
         # Get Each Drone id/name,position, yaw, battery, altitude, speed and connected status in a list?
-        drones = self.SC.drones      
+        drones = self.SC.drones
 
         # Sprite groups [] for each drone
         i=0
-        for key, value in drones.items():
+        for drone in drones:
             drone_sprite = self.groups[i]
-            x, y = (drones[key].abs_x + threshold_x, drones[key].abs_y + threshold_y)
-            spd = drones[key].totalSpeed
-            alt = drones[key].abs_z
-            yaw = drones[key].rotation
+            x, y = (drone.abs_x + threshold_x, drone.abs_y + threshold_y)
+            spd = drone.totalSpeed
+            alt = drone.abs_z
+            yaw = drone.rotation
 
             drone_sprite.update(x, y)
             drone_sprite.draw(self.screen)
@@ -429,7 +425,7 @@ class Sprite(pygame.sprite.Sprite):
         drone1 = pygame.transform.smoothscale(drone1, (80, 80))
         self.images = [drone0, drone1]
         self.index = 0
- 
+        
         self.image = self.images[self.index]
  
         self.rect = pygame.Surface([50, 50])
