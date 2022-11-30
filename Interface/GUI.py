@@ -408,14 +408,12 @@ class Gui:
         i=0
         for key, value in drones.items():
             drone_sprite = self.groups[i]
-            x, y = (drones[key].abs_x, drones[key].abs_y)
-            x, y = (x + threshold_x, y + threshold_y)
+            x, y = (drones[key].abs_x + threshold_x, drones[key].abs_y + threshold_y)
             spd = drones[key].totalSpeed
             alt = drones[key].abs_z
-            yaw = drones[key].rotation
+            yaw = drones[key].rotation         
 
-
-            drone_sprite.update(x, y)
+            drone_sprite.update(x, y, yaw)
             drone_sprite.draw(self.screen)
 
             if i < len(drones):
@@ -438,7 +436,7 @@ class Sprite(pygame.sprite.Sprite):
  
         self.rect = pygame.Rect(0, 0, 150, 198)
  
-    def update(self, x, y):
+    def update(self, x, y, yaw):
         self.index += 1
  
         if self.index >= len(self.images):
