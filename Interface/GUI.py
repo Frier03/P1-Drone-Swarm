@@ -391,7 +391,7 @@ class Gui:
         mapEndpointX, mapEndpointY = mapX + mapW, mapY + mapH
 
         # Calculate the 0,0 position of the map to the end points
-        threshold_x, threshold_y = mapStartpointX, mapStartpointY 
+        threshold_x, threshold_y = mapStartpointX+40, mapStartpointY+40 # + droneSize/2
 
         # Draw Shadow
         pygame.draw.rect(self.screen, (217,222,224, 10), pygame.Rect(mapX-shadowDistance, mapY-shadowDistance, mapW+(shadowDistance*2), mapH+(shadowDistance*2)),border_radius=rad)
@@ -402,8 +402,6 @@ class Gui:
         # Get Each Drone id/name,position, yaw, battery, altitude, speed and connected status in a list?
         drones = self.SC.drones      
 
-        drones['Tello EDU 1'].abs_x = 200
-
         # Sprite groups [] for each drone
         i=0
         for key, value in drones.items():
@@ -411,9 +409,9 @@ class Gui:
             x, y = (drones[key].abs_x + threshold_x, drones[key].abs_y + threshold_y)
             spd = drones[key].totalSpeed
             alt = drones[key].abs_z
-            yaw = drones[key].rotation         
+            yaw = drones[key].rotation
 
-            drone_sprite.update(x, y, yaw)
+            drone_sprite.update(x, y)
             drone_sprite.draw(self.screen)
 
             if i < len(drones):
@@ -434,14 +432,14 @@ class Sprite(pygame.sprite.Sprite):
  
         self.image = self.images[self.index]
  
-        self.rect = pygame.Rect(0, 0, 150, 198)
+        self.rect = pygame.Surface([50, 50])
+        self.rect.set_alpha(128)
  
-    def update(self, x, y, yaw):
+    def update(self, x, y):
         self.index += 1
- 
+
         if self.index >= len(self.images):
             self.index = 0
-        
+        #self.images[self.index] = pygame.transform.rotate(self.images[self.index], yaw)
         self.image = self.images[self.index]
-        self.rect.x = x
-        self.rect.y = y
+        self.rect = self.images[self.index].get_rect(center = (x, y))
