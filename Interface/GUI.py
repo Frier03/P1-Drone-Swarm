@@ -38,12 +38,11 @@ class Gui:
         self.SC = Swarm(droneMACS)
         self.DC = DroneConnector(self.SC.updateConnections)
 
-
     def __call__(self) -> None:
         """Load GUI once every call on class"""
-        self.__initialize()
+        self.addGUIComponents()
 
-    def __initialize(self):
+    def addGUIComponents(self):
         widgets = pygame_widgets.WidgetHandler.getWidgets()
         for _ in range(len(widgets)):
             pygame_widgets.WidgetHandler.removeWidget(widgets[0])
@@ -58,10 +57,10 @@ class Gui:
         self.__add_text(value='Available Drones', x=100,y=85, bold=True, fontsize=25)
 
         # Add Add Button to Custom Adapter
-        self.add_button = self.__add_button(value='Add', x=300, y=85, radius=2, w=50, h=30, execfunction=self.__add_drone)
+        self.add_button = self.__add_button(value='Add', x=300, y=85, radius=2, w=50, h=30, execfunction=self.__onAddDroneClick)
 
         # Add Custom Adapter
-        self.__add_customAdapter_selection(values=data, x=100, y=130, shadowDistance=2, execfuntion=self.__connect_event)
+        self.customSelectionComponent(values=data, x=100, y=130, shadowDistance=2, execfuntion=self.__connect_event)
 
         # Add Connect to All Drones Button
         self.connectall_button = self.__add_button(value='Connect to All', x=100, y=self.__adapter_y, w=150, h=30, execfunction=self.__connnect_to_all_event)
@@ -76,15 +75,9 @@ class Gui:
         self.render_map()
 
     def reloadGui(self):
-        self.__initialize()
+        self.addGUIComponents()
 
-        # Call once to allow widgets to render
-        pygame_widgets.update(pygame.event.get())
-                
-        # Update now all changes from above to the screen
-        pygame.display.update()
-
-    def __show_custom_popup(self, width=None, height=None, title=None):
+    def showCustomPopup(self, width=None, height=None, title=None):
         # Font render
         font = pygame.font.Font(f'Interface/BostonThin.otf', 14)
         # Place a alpha 128 rectangle on top of everything
@@ -132,7 +125,7 @@ class Gui:
         self.drone_cancel = self.__add_button(value='Cancel', x=width/2+220, y=height-20, w=160, h=30, radius=20, fontsize=17, shadowDistance=0, inactiveColour=(200, 200, 200), execfunction=self.__close_popup)
 
         # Make Button for "Confirm"
-        self.drone_confirm = self.__add_button(value='Confirm', x=width/2+440, y=height-20, w=160, h=30, radius=20, fontsize=17, shadowDistance=0, inactiveColour=(200, 200, 200), execfunction=self.__add_drone_to_data)
+        self.drone_confirm = self.__add_button(value='Confirm', x=width/2+440, y=height-20, w=160, h=30, radius=20, fontsize=17, shadowDistance=0, inactiveColour=(200, 200, 200), execfunction=self.__onConfirmationClick)
 
         # Make Button for "X" - Close Popup Menu
         self.drone_close = self.__add_button(value='Close', y=75, x=width+330, w=50, h=20, shadowDistance=0, inactiveColour=(220, 220, 220), radius=20, fontsize=15, execfunction=self.__close_popup)
@@ -144,7 +137,7 @@ class Gui:
             # Update now all changes from above to the screen
             pygame.display.update()
 
-    def __add_customAdapter_selection(self, values=None, x=0, y=0, shadowDistance=2, radius=4, execfuntion=None) -> None:
+    def customSelectionComponent(self, values=None, x=0, y=0, shadowDistance=2, radius=4, execfuntion=None) -> None:
         width = 250
         height = 90
 
@@ -239,7 +232,7 @@ class Gui:
         )
         return new_button
     
-    def __add_drone(self) -> None:
+    def __onAddDroneClick(self) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
         # Disable buttons before loading popup
         self.add_button.disable()
@@ -251,9 +244,9 @@ class Gui:
             self.connect_buttons[i][0].disable()
 
         self.popup_run = True
-        self.__show_custom_popup(width=600, height=375, title='Drone Overview')
+        self.showCustomPopup(width=600, height=375, title='Drone Overview')
     
-    def __add_drone_to_data(self, *args) -> None:
+    def __onConfirmationClick(self, *args) -> None: # On event function
         drone_name = self.drone_name.getText()
         drone_mac = self.drone_mac.getText() 
         drone_type = self.drone_type.getText()
@@ -284,11 +277,11 @@ class Gui:
                 # Show red Border
                 self.drone_mac.borderThickness=1
 
-    def __connnect_to_all_event(self, *args) -> None:
+    def __connnect_to_all_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
         print('Connect to All Drones!')
 
-    def __connect_event(self, *args) -> None:
+    def __connect_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
         dMAC = "".join(args)            #Convert *args back to string
         
@@ -321,12 +314,12 @@ class Gui:
             self.DC.connectWifi(self.DC.defaultWifi)
             self.DC.waitForConnection()
 
-    def __mission_event(self, *args) -> None:
+    def __mission_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
         print('Start Mission')
         pass
 
-    def __stop_event(self, *args) -> None:
+    def __stop_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
         print('STOP')
         pass
@@ -395,19 +388,18 @@ class Gui:
         # Draw Box
         pygame.draw.rect(self.screen, (255,255,255), pygame.Rect(mapX, mapY, mapW, mapH),border_radius=rad)
 
-        # Get Each Drone id/name,position, yaw, battery, altitude, speed and connected status in a list?
         drones = self.SC.drones
 
-        # Sprite groups [] for each drone
         i=0
         for drone in drones:
             drone_sprite = self.groups[i]
             x, y = (drone.abs_x + threshold_x, drone.abs_y + threshold_y)
+            is_flying = drone.is_flying
             spd = drone.totalSpeed
             alt = drone.abs_z
             yaw = drone.rotation
 
-            drone_sprite.update(x, y)
+            drone_sprite.update(x, y, is_flying)
             drone_sprite.draw(self.screen)
 
             if i < len(drones):
@@ -431,11 +423,14 @@ class Sprite(pygame.sprite.Sprite):
         self.rect = pygame.Surface([50, 50])
         self.rect.set_alpha(128)
  
-    def update(self, x, y):
-        self.index += 1
+    def update(self, x, y, is_flying):
+        # Show Sprite Animation if the drone is flying
+        if is_flying:
+            self.index += 1
 
-        if self.index >= len(self.images):
-            self.index = 0
+            if self.index >= len(self.images):
+                self.index = 0
+
         #self.images[self.index] = pygame.transform.rotate(self.images[self.index], yaw)
         self.image = self.images[self.index]
         self.rect = self.images[self.index].get_rect(center = (x, y))
