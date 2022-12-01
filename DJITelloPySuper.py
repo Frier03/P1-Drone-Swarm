@@ -14,6 +14,7 @@ class Drone():
         #Custom variables -----------------------
         self.ip = 0
         self.mac = mac
+        self.is_flying = False
         self.connected = False
         self.guiStatus: str = "Connect"     #Connect, Disconnected, Connecting, Calibrated, Calibrating, Failed
 
@@ -59,6 +60,7 @@ class Drone():
         while True:
             try:
                 if self.connected:
+                    self.is_flying = self.dji.is_flying
                     self.rotation = self.dji.get_yaw()
                     self.totalSpeed = math.sqrt(self.dji.get_speed_x()**2 + self.dji.get_speed_y()**2 + self.dji.get_speed_z()**2)
                     self.battery = self.dji.get_battery()
