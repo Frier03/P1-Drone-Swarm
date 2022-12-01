@@ -71,6 +71,9 @@ class Gui:
         # Add Stop Button
         self.stop_button = self.__add_button(value='STOP', x=100, y=700, execfunction=self.__stop_event, radius=20, shadowColour=(230, 158, 159), inactiveColour=(239, 142, 143), pressedColour=(207, 117, 118), hoverColour=(245, 125, 126))
 
+        # Make Button for "X" - Close program
+        self.drone_close = self.__add_button(value='Close', y=30, x=self.screen.get_width()-100, w=70, h=30, shadowDistance=0, inactiveColour=(220, 220, 220), radius=20, fontsize=20, execfunction=self.onCloseProgram)
+
         # Add Map
         self.render_map()
 
@@ -80,6 +83,9 @@ class Gui:
         pygame_widgets.update(pygame.event.get())
         pygame.display.update()
 
+    def onCloseProgram(self):
+        from main import App
+        App.onClose(App)
 
     def showCustomPopup(self, width=None, height=None, title=None):
         # Font render
@@ -304,8 +310,6 @@ class Gui:
         self.DC.connectWifi(self.DC.defaultWifi)
         self.DC.waitForConnection()
 
-
-
     def __connect_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
         dMAC = "".join(args)            #Convert *args back to string
@@ -430,7 +434,6 @@ class Gui:
             if i < len(drones):
                 i+=1
             else: i=0
-        
 
 class Sprite(pygame.sprite.Sprite):
     def __init__(self):

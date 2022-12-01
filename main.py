@@ -15,9 +15,6 @@ class App:
         self.screenHeight = 800
 
         self.screen = pygame.display.set_mode((self.screenWidth, self.screenHeight), pygame.NOFRAME)
-        pygame.display.set_caption('')
-        aau_img = pygame.image.load('Interface/aau.png')
-        pygame.display.set_icon(aau_img)
 
         # Initialize interface classes
         self.gui = GUI.Gui(self.screen, pygame.event.get())
@@ -39,12 +36,16 @@ class App:
                 
                 # Update now all changes from above to the screen
                 pygame.display.update()
+                print(App.running)
 
                 self.clock.tick(20)
 
         except Exception as e:
             print(e)
 
+        self.onClose()
+
+    def onClose(self):
         pygame.quit()
 
 if __name__ == '__main__':
