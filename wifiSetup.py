@@ -216,7 +216,6 @@ class DroneConnector():
         """Opretter forbindelse, sætter i SDK mode og forbinder dronen til hotspottet"""
         droneMAC = droneMAC.replace('-', '')[-6:]
         droneSSID = "TELLO-" + droneMAC
-        print(f"CALIBRATEDRONE( {droneMAC=} )")
         self.connectToNewWifi(droneSSID)
 
         #Wait until wifi is connected
@@ -224,7 +223,7 @@ class DroneConnector():
         isWifiConnected = False
         for i in range(10):
             if self.getCurrentWifi() == droneSSID:
-                print(" --> Connected")
+                print(" --> Connected | ", end="")
                 isWifiConnected = True
                 break
             else:
@@ -237,7 +236,7 @@ class DroneConnector():
         # VI ER PÅ DRONENS WIFI NU
 
         #SOCKET SETUP
-        locaddr = ('', 8889)                        #HOST and PORT ME
+        locaddr = ('', 1889)                        #HOST and PORT ME
         tello_address = ('192.168.10.1', 8889)      #HOST AND PORT FOR TELLO
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(3)
@@ -257,10 +256,10 @@ class DroneConnector():
                 response = response.decode("utf-8")
                 if response == "ok":
                     conEstablished = True
-                    print(" --> ok")
+                    print(" --> ok. ", end="")
                     break
                 elif response == "error":
-                    print(" --> error")
+                    print(" --> error. ", end="")
             except Exception as e:
                 pass
                 #print("Error", str(e))
@@ -278,9 +277,9 @@ class DroneConnector():
                     response = response.decode("utf-8")
                     if response == "error":
                         conEstablished = False
-                        print("error")
+                        print("error", end="")
                 except Exception as e:
-                    print("assumed to be <ok>")
+                    print("assumed to be <ok>", end="")
                     break
         
         
@@ -296,4 +295,5 @@ if __name__ == "__main__":
     DC = DroneConnector(blackhole)
     print([i.ssid for i in DC.findDrones()])
     print("Drone connected =", DC.calibrateDrone("F251F6"))
-
+    print("Drone connected =", DC.calibrateDrone("F250C6"))
+    DC.connectWifi(DC.defaultWifi)

@@ -67,7 +67,9 @@ class Swarm:
             for jc in just_connected:
                 found = self.findDrone(jc[1])
                 if found:                           #Reconnect
-                    found.setIp(jc[0])
+                    for i in range(3):
+                        if found.setIp(jc[0]):
+                            break
                 
                 elif found == False:                #New connect
                     drone = Drone(mac=jc[1])

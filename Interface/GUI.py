@@ -77,6 +77,10 @@ class Gui:
     def reloadGui(self):
         self.addGUIComponents()
 
+        pygame_widgets.update(pygame.event.get())
+        pygame.display.update()
+
+
     def showCustomPopup(self, width=None, height=None, title=None):
         # Font render
         font = pygame.font.Font(f'Interface/BostonThin.otf', 14)
@@ -181,7 +185,7 @@ class Gui:
                     button = self.__add_button(value='Connect', x=295, y=y+12, w=40,h=20, fontsize=14, radius=2, shadowDistance=1, execfunction=execfuntion, execfunctionParams = drone.mac)
                     self.connect_buttons.append([button, drone.mac])
 
-                elif drone.guiStatus == 'Connecting...':
+                elif drone.guiStatus == 'Connecting':
                     # Draw Text
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Connecting...', color=(205, 205, 80), fontname='BostonBold')
 
@@ -279,7 +283,29 @@ class Gui:
 
     def __connnect_to_all_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
-        print('Connect to All Drones!')
+
+        print('[+] Connect to All Drones!')
+        goodDrones = [drone for drone in self.SC.drones if drone.guiStatus == "Connect"]
+        
+        for drone in goodDrones:
+            drone.guiStatus = "Connecting"
+        self.reloadGui()
+        
+        for drone in goodDrones:
+            if self.DC.calibrateDrone(drone.mac):
+                drone.guiStatus = 'Calibrated'
+            else:
+                drone.guiStatus = 'Failed'
+                self.reloadGui()
+                sleep(0.6)
+                drone.guiStatus = 'Connect'
+            self.reloadGui()
+            
+        
+        self.DC.connectWifi(self.DC.defaultWifi)
+        self.DC.waitForConnection()
+
+
 
     def __connect_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
@@ -287,7 +313,7 @@ class Gui:
         
         drone = self.SC.findDrone(dMAC)
         # Change button from Connect -> Connecting... (inherit into swarm -> drones and change guiStatus data member)
-        drone.guiStatus = 'Connecting...'
+        drone.guiStatus = 'Connecting'
         
 
         # Reload GUI
@@ -303,7 +329,7 @@ class Gui:
             
             # Reload GUI
             self.reloadGui()
-            sleep(2)
+            sleep(0.6)
 
             # Change from Connecting... -> Connect (default colo)
             drone.guiStatus = 'Connect'
