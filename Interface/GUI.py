@@ -19,7 +19,7 @@ class Gui:
         self.events = events
         self.connect_buttons = list() # Holds each button on our custom adapter selection list
         self.selected_value = None
-        self.drone_img = pygame.image.load('Interface/drone.png').convert()
+        self.drone_img = pygame.image.load('Interface/drone.png')
         self.popup_run = False
 
         # Init Drone Animation for each drone (groups)
@@ -170,16 +170,15 @@ class Gui:
                 self.__add_text(x=x+width/4+38, y=y+55, value=values[key]['TYPE'], fontsize=12, fontname='BostonRegular')
 
                 # Draw Drone Image
-                self.drone_img = pygame.transform.smoothscale(self.drone_img, (60, 60))
-                self.screen.blit(self.drone_img, (x+2, y+13))
-
+                drone_img = pygame.transform.smoothscale(self.drone_img, (60, 60))
+                self.screen.blit(drone_img, (x+2, y+13))
 
                 drone = self.SC.findDrone( values[key]['MAC_ADDRESS'] )
 
                 if drone.connected == True:
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Connected', color=(0, 255, 0), fontname='BostonBold')
 
-                # Check what status on drone is on (Connect, Connecting... or Connected)
+                # Check what status the drone is on (Connect, Connecting... or Connected)
                 elif drone.guiStatus == 'Connect':
                     # Draw Connect Button (Store each button in a list, so we know which button is pressed)
                     button = self.__add_button(value='Connect', x=295, y=y+12, w=40,h=20, fontsize=14, radius=2, shadowDistance=1, execfunction=execfuntion, execfunctionParams = drone.mac)
