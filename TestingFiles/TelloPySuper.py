@@ -29,6 +29,7 @@ def euler_from_quaternion(x, y, z, w):
     return math.degrees(roll_x), math.degrees(pitch_y), math.degrees(yaw_z)
 
 
+
 class Drone(Tello):
 
     def __init__(self, ip="192.168.10.1", port=9000, mac="aa:aa:aa:aa:aa"):        

@@ -413,7 +413,7 @@ class Gui:
             if i < len(drones):
                 i+=1
             else: i=0
-            
+        
 
 class Sprite(pygame.sprite.Sprite):
     def __init__(self):

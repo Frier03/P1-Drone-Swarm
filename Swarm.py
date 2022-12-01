@@ -1,16 +1,47 @@
 from DJITelloPySuper import Drone
 from time import sleep
+from threading import Thread
+import enum
 
+class Status(enum.Enum):
+    Idle = 0
+    Emergency = 1
+    Mission = 2
 
 
 class Swarm:
     drones: list[Drone] = []
-    old_drones = []    
+    old_drones = []
 
-    def __init__(self, macs):
+    status = Status.Idle
+
+    def __init__(self, macs=["FF-FF-FF-FF-FF"]):
         for m in macs:
             self.drones.append( Drone(mac=m) )
+        
+        T = Thread(target=self.controller)
+        T.daemon = True
+        T.start()
+
+    def controller(self):
+        while True:
+            if self.status == Status.Emergency:
+                for drone in self.drones:
+                    drone.dji.emergency()
+                self.status == Status.Idle
+            
+            elif self.status == Status.Mission:
+                pass
+            
+            sleep(1)
+
     
+    def startMission(self):
+        self.status = Status.Mission
+
+    def EMERGENCY(self):
+        self.status = Status.Mission
+
 
     def findDrone(self, mac):
         for drone in self.drones:
@@ -52,25 +83,8 @@ class Swarm:
         
         self.old_drones = current_drones
 
-
-    def startMission():
-        pass
-
-    def EMERGENCY():
-        pass
-
     
 
-from wifiSetup import DroneConnector
+
 if __name__ == "__main__":
     SC = Swarm()
-    DC = DroneConnector(SC.updateConnections)
-    print("Starting")
-
-    for i in range(10000):
-        for drone in SC.drones:
-            pass
-            #print(drone.mID, f"{drone.connected=} | Absolute", drone.abs_x, "|", drone.abs_y, "|", drone.abs_z)
-        sleep(0.2)
-    
-    sleep(1000)
