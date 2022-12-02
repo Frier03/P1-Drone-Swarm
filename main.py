@@ -36,7 +36,6 @@ class App:
                 
                 # Update now all changes from above to the screen
                 pygame.display.update()
-                print(App.running)
 
                 self.clock.tick(20)
 
