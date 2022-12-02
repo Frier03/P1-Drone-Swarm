@@ -6,7 +6,7 @@ import enum
 class MissionStatus(enum.Enum):
     Idle = 0
     Emergency = 1
-    Mission = 2
+    Test = 2
 
 
 class Swarm:
@@ -23,32 +23,11 @@ class Swarm:
         T.daemon = True
         T.start()
     
-
-    def controller(self):
-        while True:
-            if self.status == MissionStatus.Emergency:
-                for drone in self.drones:
-                    drone.dji.emergency()
-                self.status == MissionStatus.Idle
-            
-            elif self.status == MissionStatus.Mission:
-                pass
-
-
-            #Testing
-            for drone in self.drones:
-                #print(f"{drone.mac} {drone.abs_x:5} {drone.abs_y:5}   |", end="")
-                pass
-            #print("")
-            
-            sleep(1)
-
-    
     def startMission(self):
-        self.status = MissionStatus.Mission
+        self.status = MissionStatus.Test
 
     def EMERGENCY(self):
-        self.status = MissionStatus.Mission
+        self.status = MissionStatus.Emergency
 
 
     def findDrone(self, mac):
@@ -75,9 +54,7 @@ class Swarm:
             for jc in just_connected:
                 found = self.findDrone(jc[1])
                 if found:                           #Reconnect
-                    for i in range(3):
-                        if found.setIp(jc[0]):
-                            break
+                    found.setIp(jc[0])
                 
                 elif found == False:                #New connect
                     drone = Drone(mac=jc[1])
@@ -93,6 +70,25 @@ class Swarm:
         
         self.old_drones = current_drones
 
+
+    def controller(self):
+        while True:
+            if self.status == MissionStatus.Emergency:
+                for drone in self.drones:
+                    drone.dji.emergency()
+                self.status == MissionStatus.Idle
+            
+            elif self.status == MissionStatus.Test:
+                pass
+
+
+            #Testing
+            for drone in self.drones:
+                #print(f"{drone.mac} {drone.abs_x:5} {drone.abs_y:5}   |", end="")
+                pass
+            #print("")
+            
+            sleep(1)
 
 
 
