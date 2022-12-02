@@ -295,5 +295,5 @@ if __name__ == "__main__":
     DC = DroneConnector(blackhole)
     print([i.ssid for i in DC.findDrones()])
     print("Drone connected =", DC.calibrateDrone("F251F6"))
-    print("Drone connected =", DC.calibrateDrone("F250C6"))
+    #print("Drone connected =", DC.calibrateDrone("F250C6"))
     DC.connectWifi(DC.defaultWifi)
