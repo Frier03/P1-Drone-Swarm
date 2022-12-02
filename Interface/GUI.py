@@ -1,7 +1,6 @@
 import pygame
 from pygame.locals import *
 import pygame_widgets
-import pygame_widgets
 from pygame_widgets.textbox import TextBox
 from pygame_widgets.button import Button
 import re
@@ -401,6 +400,7 @@ class Gui:
         """Create grid and make map"""
         mapX, mapY = 400, 85
         mapW, mapH = 800, 600
+        realW, realH = 182, 182
         rad = 2
         shadowDistance = 2
 
@@ -422,13 +422,17 @@ class Gui:
         i=0
         for drone in drones:
             drone_sprite = self.groups[i]
-            x, y = (drone.abs_x + threshold_x, drone.abs_y + threshold_y)
+            x_factor = mapW/realW
+            y_factor = mapH/realH
+            x, y= (drone.abs_x * x_factor, drone.abs_y * y_factor)
+            x, y = (x + threshold_y, y + threshold_x)
+            # Switch x, y to y, x since our map in real is reversed
             is_flying = drone.is_flying
             spd = drone.totalSpeed
             alt = drone.abs_z
             yaw = drone.rotation
 
-            drone_sprite.update(x, y, is_flying, yaw)
+            drone_sprite.update(y, x, is_flying, yaw)
             drone_sprite.draw(self.screen)
 
             if i < len(drones):
@@ -445,11 +449,12 @@ class Sprite(pygame.sprite.Sprite):
         drone1 = pygame.transform.smoothscale(drone1, (80, 80))
         self.images = [drone0, drone1]
         self.index = 0
-        self.oldyaw = 0
-        
+
+        # Do not keep rotating a image again and again, 
+        # instead have a master with the original image and a temp list with the rotated image
         self.image = self.images[self.index]
-        self.rotatedImages = [] # Do not keep rotating a image again and again, instead have a master with original image and a secondary with the rotated image
- 
+        self.rotatedImage = []  
+        
         self.rect = pygame.Surface([50, 50])
         self.rect.set_alpha(128)
  
@@ -462,8 +467,8 @@ class Sprite(pygame.sprite.Sprite):
                 self.index = 0
 
 
-        self.rotatedImages.append(pygame.transform.rotate(self.images[self.index], yaw))
-        self.image = self.rotatedImages[0]
-        self.rect = self.rotatedImages[0].get_rect(center = (x, y))
+        self.rotatedImage.append(pygame.transform.rotate(self.images[self.index], yaw))
+        self.image = self.rotatedImage[0]
+        self.rect = self.rotatedImage[0].get_rect(center = (x, y))
 
-        del self.rotatedImages[0]
+        del self.rotatedImage[0]
