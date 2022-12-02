@@ -8,6 +8,7 @@ from threading import Thread
 
 
 class Drone():
+
     def __init__(self, mac="aa:aa:aa:aa:aa", offset = 50, distanceBetweenPads = 57):
         self.dji : dji = None
 
@@ -19,6 +20,9 @@ class Drone():
         self.guiStatus: str = "Connect"     #Connect, Disconnected, Connecting, Calibrated, Calibrating, Failed
 
         self.mID = -1
+        self.localX = -100
+        self.localY = -100
+        self.localZ = -100
         self.abs_x = 0
         self.abs_y = 0
         self.abs_z = 0
@@ -37,7 +41,6 @@ class Drone():
         T.daemon = True
         T.start()
 
-
     def setIp(self, newIP):
         self.connected = False
         self.ip = newIP
@@ -46,23 +49,22 @@ class Drone():
             del self.dji
 
         self.dji = dji(host=newIP.strip(), retry_count=1)   #Generates an error after x (3) retries
-        self.dji.LOGGER.setLevel(logging.ERROR)              #For debugging and output in terminal
+        self.dji.LOGGER.setLevel(logging.INFO)              #For debugging and output in terminal
 
         for i in range(3):      #Try connect up to 3 times
             try:
                 self.dji.connect()  #Is changed to timeout after 1 sec. Look package files
                 #Connect generates an error if not connected
                 self.dji.enable_mission_pads()
-                self.dji.set_mission_pad_detection_direction(0)     #Forward and downward
+                self.dji.set_mission_pad_detection_direction(2)     #Forward and downward
 
                 self.originalYaw = self.dji.get_yaw()               #Remember first yaw
-
+                self.dji.TAKEOFF_TIMEOUT = 30
                 self.connected = True
                 return True
             except Exception as e:
                 print("exception", e)
         return False
-
 
     def mainUpdater(self):
         while True:
@@ -75,19 +77,19 @@ class Drone():
 
                     #POSITION CALCULATIONS
                     self.mID = self.dji.get_mission_pad_id()
-                    x = self.dji.get_mission_pad_distance_x()
-                    y = self.dji.get_mission_pad_distance_y()
-                    z = self.dji.get_mission_pad_distance_z()
+                    self.localX = self.dji.get_mission_pad_distance_x()
+                    self.localY = self.dji.get_mission_pad_distance_y()
+                    self.localZ = self.dji.get_mission_pad_distance_z()
                     
                     if self.mID != -1:               #If a pad is found
                         xRow = (self.mID-1)//3       #Just think about. Its very easy to understand
                         yRow = (self.mID-1) % 3
                         
-                        self.abs_x = self.distanceBetweenPads * xRow + -x + self.offset
-                        self.abs_y = self.distanceBetweenPads * yRow + -y + self.offset
-                        self.abs_z = z
+                        self.abs_x = self.offset + (xRow * self.distanceBetweenPads) + (-self.localX)
+                        self.abs_y = self.offset + (yRow * self.distanceBetweenPads) + (-self.localY)
+                        self.abs_z = self.localZ
 
-                        print(f"{self.mID}  |  LOCAL {x=:5} {y=:5} {z=:5}          |          ABS {self.abs_x:5} {self.abs_y:5} {self.abs_z:5}")
+                        print(f"{self.mID}  |  LOCAL {self.localX=:5} {self.localY=:5} {self.localZ=:5}          |          ABS {self.abs_x:5} {self.abs_y:5} {self.abs_z:5}")
 
 
                         self.lastSeenPad = self.mID
@@ -101,10 +103,28 @@ class Drone():
             sleep(0.5)
 
 
-    def jumpToPad(self, pad):
-        pass
+    def GoToPad(self, pad):
     
-    
+        if self.mID == pad:             #Centering over pad
+            print("Centering") 
+            for i in range(3):
+                try:
+                    self.dji.go_xyz_speed_mid(0, 0, 120, 15, pad) #Changed timeout to 15
+                    break
+                except:
+                    print("Timeout error")
+                    if -10 < self.localX < 10 and -10 < self.localY <10:
+                        print("x og y er god")
+                        break
+        else:                           #Jumping to pad 
+            print("Jump to pad")
+            xRow = (self.mID-1)//3 - (pad-1)//3
+            yRow = (self.mID-1) % 3 - (pad-1) % 3
+            xRow = xRow * self.distanceBetweenPads
+            yRow = yRow * self.distanceBetweenPads
+
+            self.dji.go_xyz_speed_yaw_mid(xRow,yRow,80,50,0,self.mID,pad)
+
 
 
 
@@ -145,10 +165,16 @@ def testJump(drone):
 
 if __name__ == "__main__":
     droneF = Drone()
+    droneF.setIp("192.168.137.5")
+    
+    
+    droneF.dji.takeoff()
+    
+    droneF.GoToPad(5)
+    droneF.GoToPad(4)
 
-    while droneF.connected == False:
-        droneF.setIp("192.168.137.252")
-        print("connecting")
+    droneF.dji.land()
 
-    print("established")
+    
+
     sleep(999)
