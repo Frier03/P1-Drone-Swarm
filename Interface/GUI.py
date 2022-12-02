@@ -7,8 +7,7 @@ import re
 from . import fileManager as fm
 from wifiSetup import DroneConnector
 from time import sleep
-from Swarm import Swarm
-from DJITelloPySuper import Drone
+from Swarm import Swarm, MissionStatus
 
 #https://pygamewidgets.readthedocs.io/en
 class Gui:
@@ -345,6 +344,7 @@ class Gui:
     def __mission_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
         print('Start Mission')
+        self.SC.status = MissionStatus.Mission
         pass
 
     def __stop_event(self, *args) -> None: # On event function
@@ -399,8 +399,9 @@ class Gui:
     def render_map(self) -> None:
         """Create grid and make map"""
         mapX, mapY = 400, 85
-        mapW, mapH = 800, 600
-        realW, realH = 182, 182
+        mapW, mapH = 900, 650
+
+        realW, realH = 220, 220
         rad = 2
         shadowDistance = 2
 
@@ -409,7 +410,8 @@ class Gui:
         mapEndpointX, mapEndpointY = mapX + mapW, mapY + mapH
 
         # Calculate the 0,0 position of the map to the end points
-        threshold_x, threshold_y = mapStartpointX+40, mapStartpointY+40 # + droneSize/2
+        threshold_x, threshold_y = mapStartpointX+25, mapStartpointY+25 # + droneSize/2
+        #threshold_x, threshold_y = 0, 0     #DELETE ME
 
         # Draw Shadow
         pygame.draw.rect(self.screen, (217,222,224, 10), pygame.Rect(mapX-shadowDistance, mapY-shadowDistance, mapW+(shadowDistance*2), mapH+(shadowDistance*2)),border_radius=rad)
@@ -424,15 +426,18 @@ class Gui:
             drone_sprite = self.groups[i]
             x_factor = mapW/realW
             y_factor = mapH/realH
-            x, y= (drone.abs_x * x_factor, drone.abs_y * y_factor)
-            x, y = (x + threshold_y, y + threshold_x)
+            
+            x, y= (drone.abs_y * x_factor, drone.abs_x * y_factor)
+            x, y = (x + threshold_x, y + threshold_y)
             # Switch x, y to y, x since our map in real is reversed
             is_flying = drone.is_flying
             spd = drone.totalSpeed
             alt = drone.abs_z
-            yaw = drone.rotation
+            yaw = -drone.rotation
 
-            drone_sprite.update(y, x, is_flying, yaw)
+            #if drone.connected: print(f"{x_factor=} {y_factor=} | {x=} {y=}")
+
+            drone_sprite.update(x, y, is_flying, yaw)
             drone_sprite.draw(self.screen)
 
             if i < len(drones):
@@ -444,9 +449,9 @@ class Sprite(pygame.sprite.Sprite):
         super(Sprite, self).__init__()
 
         drone0 = pygame.image.load('Interface/drone.png')
-        drone0 = pygame.transform.smoothscale(drone0, (80, 80))
+        drone0 = pygame.transform.smoothscale(drone0, (50, 50))
         drone1 = pygame.image.load('Interface/drone1.png')
-        drone1 = pygame.transform.smoothscale(drone1, (80, 80))
+        drone1 = pygame.transform.smoothscale(drone1, (50, 50))
         self.images = [drone0, drone1]
         self.index = 0
 

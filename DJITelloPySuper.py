@@ -8,7 +8,7 @@ from threading import Thread
 
 
 class Drone():
-    def __init__(self, mac="aa:aa:aa:aa:aa", distanceBetweenPads = 40):
+    def __init__(self, mac="aa:aa:aa:aa:aa", offset = 50, distanceBetweenPads = 57):
         self.dji : dji = None
 
         #Custom variables -----------------------
@@ -25,10 +25,12 @@ class Drone():
         self.rotation = 0
         self.battery = 0
         self.totalSpeed = 0
+        self.originalYaw = 0
 
         self.lastSeenPad = 0
         self.isDataNew = False
         self.distanceBetweenPads = distanceBetweenPads
+        self.offset = offset
 
         #Start position updater thread
         T = Thread(target=self.mainUpdater)
@@ -51,6 +53,7 @@ class Drone():
             self.dji.enable_mission_pads()
             self.dji.set_mission_pad_detection_direction(2)
 
+            self.originalYaw = self.dji.get_yaw()           #Remember first yaw
             self.connected = True
             return True
         except Exception as e:
@@ -63,7 +66,7 @@ class Drone():
             try:
                 if self.connected:
                     self.is_flying = self.dji.is_flying
-                    self.rotation = self.dji.get_yaw()
+                    self.rotation = self.dji.get_yaw() - self.originalYaw
                     self.totalSpeed = math.sqrt(self.dji.get_speed_x()**2 + self.dji.get_speed_y()**2 + self.dji.get_speed_z()**2)
                     self.battery = self.dji.get_battery()
 
@@ -77,9 +80,12 @@ class Drone():
                         xRow = (self.mID-1)//3       #Just think about. Its very easy to understand
                         yRow = (self.mID-1) % 3
                         
-                        self.abs_x = self.distanceBetweenPads * xRow + -x
-                        self.abs_y = self.distanceBetweenPads * yRow + -y
+                        self.abs_x = self.distanceBetweenPads * xRow + -x + self.offset
+                        self.abs_y = self.distanceBetweenPads * yRow + -y + self.offset
                         self.abs_z = z
+
+                        print(f"{self.mID}  |  LOCAL {x=:5} {y=:5} {z=:5}          |          ABS {self.abs_x:5} {self.abs_y:5} {self.abs_z:5}")
+
 
                         self.lastSeenPad = self.mID
                         self.isDataNew = True
@@ -91,6 +97,9 @@ class Drone():
                 #print("Is this updating the ip?")
             sleep(0.5)
 
+
+    def jumpToPad(self, pad):
+        pass
 
 
 
@@ -131,19 +140,10 @@ def testJump(drone):
 
 if __name__ == "__main__":
     droneF = Drone()
-    droneF.setIp("192.168.137.204")
-    print(droneF.connected)
 
+    while droneF.connected == False:
+        droneF.setIp("192.168.137.252")
+        print("connecting")
 
-    droneC = Drone()
-    droneC.setIp("192.168.137.77")
-    print(droneC.connected)
-
-    for i in range(1000):
-        print(f"{droneF.connected=} {droneF.abs_x=} | {droneC.connected=} {droneC.abs_x=} ")
-        sleep(0.2)
-
-
-    droneF.dji.end()
-    droneC.dji.end()
+    print("established")
     sleep(999)

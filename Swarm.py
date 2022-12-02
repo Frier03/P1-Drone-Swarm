@@ -3,7 +3,7 @@ from time import sleep
 from threading import Thread
 import enum
 
-class Status(enum.Enum):
+class MissionStatus(enum.Enum):
     Idle = 0
     Emergency = 1
     Mission = 2
@@ -13,34 +13,42 @@ class Swarm:
     drones: list[Drone] = []
     old_drones = []
 
-    status = Status.Idle
+    status = MissionStatus.Idle
 
-    def __init__(self, macs=["FF-FF-FF-FF-FF"]):
-        for m in macs:
-            self.drones.append( Drone(mac=m) )
+    def __init__(self, macs=["FF-FF-FF-FF-FF"], offset=50, distanceBetweenPads=57):
+        for mac in macs:
+            self.drones.append( Drone(mac, offset, distanceBetweenPads) )
         
         T = Thread(target=self.controller)
         T.daemon = True
         T.start()
+    
 
     def controller(self):
         while True:
-            if self.status == Status.Emergency:
+            if self.status == MissionStatus.Emergency:
                 for drone in self.drones:
                     drone.dji.emergency()
-                self.status == Status.Idle
+                self.status == MissionStatus.Idle
             
-            elif self.status == Status.Mission:
+            elif self.status == MissionStatus.Mission:
                 pass
+
+
+            #Testing
+            for drone in self.drones:
+                #print(f"{drone.mac} {drone.abs_x:5} {drone.abs_y:5}   |", end="")
+                pass
+            #print("")
             
             sleep(1)
 
     
     def startMission(self):
-        self.status = Status.Mission
+        self.status = MissionStatus.Mission
 
     def EMERGENCY(self):
-        self.status = Status.Mission
+        self.status = MissionStatus.Mission
 
 
     def findDrone(self, mac):
@@ -85,8 +93,11 @@ class Swarm:
         
         self.old_drones = current_drones
 
-    
+
 
 
 if __name__ == "__main__":
     SC = Swarm()
+
+
+
