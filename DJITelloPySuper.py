@@ -50,9 +50,11 @@ class Drone():
             #Connect generates an error if not connected
             self.dji.enable_mission_pads()
             self.dji.set_mission_pad_detection_direction(2)
+
             self.connected = True
             return True
         except Exception as e:
+            print("exception", e)
             return False
 
 
@@ -85,7 +87,8 @@ class Drone():
                         self.isDataNew = False
                         #print("No pad?")
             except:
-                print("Is this updating the ip?")
+                pass
+                #print("Is this updating the ip?")
             sleep(0.5)
 
 
@@ -127,11 +130,20 @@ def testJump(drone):
 
 
 if __name__ == "__main__":
-    drone = Drone()
-    drone.setIp("192.168.137.25")
+    droneF = Drone()
+    droneF.setIp("192.168.137.204")
+    print(droneF.connected)
 
-    for i in range(500000):
-        print(f'Con={drone.connected:1} Bat:{drone.battery} | Mid={drone.lastSeenPad:3} | {drone.abs_x:2}, {drone.abs_y:2}, {drone.abs_z:2}')
-        sleep(0.1)
 
-    drone.dji.end()
+    droneC = Drone()
+    droneC.setIp("192.168.137.77")
+    print(droneC.connected)
+
+    for i in range(1000):
+        print(f"{droneF.connected=} {droneF.abs_x=} | {droneC.connected=} {droneC.abs_x=} ")
+        sleep(0.2)
+
+
+    droneF.dji.end()
+    droneC.dji.end()
+    sleep(999)

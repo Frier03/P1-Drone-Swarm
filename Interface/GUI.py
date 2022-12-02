@@ -1,7 +1,6 @@
 import pygame
 from pygame.locals import *
 import pygame_widgets
-import pygame_widgets
 from pygame_widgets.textbox import TextBox
 from pygame_widgets.button import Button
 import re
@@ -19,7 +18,7 @@ class Gui:
         self.events = events
         self.connect_buttons = list() # Holds each button on our custom adapter selection list
         self.selected_value = None
-        self.drone_img = pygame.image.load('Interface/drone.png').convert()
+        self.drone_img = pygame.image.load('Interface/drone.png')
         self.popup_run = False
 
         # Init Drone Animation for each drone (groups)
@@ -71,11 +70,21 @@ class Gui:
         # Add Stop Button
         self.stop_button = self.__add_button(value='STOP', x=100, y=700, execfunction=self.__stop_event, radius=20, shadowColour=(230, 158, 159), inactiveColour=(239, 142, 143), pressedColour=(207, 117, 118), hoverColour=(245, 125, 126))
 
+        # Make Button for "X" - Close program
+        self.drone_close = self.__add_button(value='Close', y=30, x=self.screen.get_width()-100, w=70, h=30, shadowDistance=0, inactiveColour=(220, 220, 220), radius=20, fontsize=20, execfunction=self.onCloseProgram)
+
         # Add Map
         self.render_map()
 
     def reloadGui(self):
         self.addGUIComponents()
+
+        pygame_widgets.update(pygame.event.get())
+        pygame.display.update()
+
+    def onCloseProgram(self):
+        from main import App
+        App.onClose(App)
 
     def showCustomPopup(self, width=None, height=None, title=None):
         # Font render
@@ -166,22 +175,21 @@ class Gui:
                 self.__add_text(x=x+width/4+38, y=y+55, value=values[key]['TYPE'], fontsize=12, fontname='BostonRegular')
 
                 # Draw Drone Image
-                self.drone_img = pygame.transform.smoothscale(self.drone_img, (60, 60))
-                self.screen.blit(self.drone_img, (x+2, y+13))
-
+                drone_img = pygame.transform.smoothscale(self.drone_img, (60, 60))
+                self.screen.blit(drone_img, (x+2, y+13))
 
                 drone = self.SC.findDrone( values[key]['MAC_ADDRESS'] )
 
                 if drone.connected == True:
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Connected', color=(0, 255, 0), fontname='BostonBold')
 
-                # Check what status on drone is on (Connect, Connecting... or Connected)
+                # Check what status the drone is on (Connect, Connecting... or Connected)
                 elif drone.guiStatus == 'Connect':
                     # Draw Connect Button (Store each button in a list, so we know which button is pressed)
                     button = self.__add_button(value='Connect', x=295, y=y+12, w=40,h=20, fontsize=14, radius=2, shadowDistance=1, execfunction=execfuntion, execfunctionParams = drone.mac)
                     self.connect_buttons.append([button, drone.mac])
 
-                elif drone.guiStatus == 'Connecting...':
+                elif drone.guiStatus == 'Connecting':
                     # Draw Text
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Connecting...', color=(205, 205, 80), fontname='BostonBold')
 
@@ -279,7 +287,27 @@ class Gui:
 
     def __connnect_to_all_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
-        print('Connect to All Drones!')
+
+        print('[+] Connect to All Drones!')
+        goodDrones = [drone for drone in self.SC.drones if drone.guiStatus == "Connect"]
+        
+        for drone in goodDrones:
+            drone.guiStatus = "Connecting"
+        self.reloadGui()
+        
+        for drone in goodDrones:
+            if self.DC.calibrateDrone(drone.mac):
+                drone.guiStatus = 'Calibrated'
+            else:
+                drone.guiStatus = 'Failed'
+                self.reloadGui()
+                sleep(0.6)
+                drone.guiStatus = 'Connect'
+            self.reloadGui()
+            
+        
+        self.DC.connectWifi(self.DC.defaultWifi)
+        self.DC.waitForConnection()
 
     def __connect_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
@@ -287,7 +315,7 @@ class Gui:
         
         drone = self.SC.findDrone(dMAC)
         # Change button from Connect -> Connecting... (inherit into swarm -> drones and change guiStatus data member)
-        drone.guiStatus = 'Connecting...'
+        drone.guiStatus = 'Connecting'
         
 
         # Reload GUI
@@ -303,7 +331,7 @@ class Gui:
             
             # Reload GUI
             self.reloadGui()
-            sleep(2)
+            sleep(0.6)
 
             # Change from Connecting... -> Connect (default colo)
             drone.guiStatus = 'Connect'
@@ -372,6 +400,7 @@ class Gui:
         """Create grid and make map"""
         mapX, mapY = 400, 85
         mapW, mapH = 800, 600
+        realW, realH = 182, 182
         rad = 2
         shadowDistance = 2
 
@@ -393,19 +422,22 @@ class Gui:
         i=0
         for drone in drones:
             drone_sprite = self.groups[i]
-            x, y = (drone.abs_x + threshold_x, drone.abs_y + threshold_y)
+            x_factor = mapW/realW
+            y_factor = mapH/realH
+            x, y= (drone.abs_x * x_factor, drone.abs_y * y_factor)
+            x, y = (x + threshold_y, y + threshold_x)
+            # Switch x, y to y, x since our map in real is reversed
             is_flying = drone.is_flying
             spd = drone.totalSpeed
             alt = drone.abs_z
             yaw = drone.rotation
 
-            drone_sprite.update(x, y, is_flying)
+            drone_sprite.update(y, x, is_flying, yaw)
             drone_sprite.draw(self.screen)
 
             if i < len(drones):
                 i+=1
             else: i=0
-        
 
 class Sprite(pygame.sprite.Sprite):
     def __init__(self):
@@ -417,13 +449,16 @@ class Sprite(pygame.sprite.Sprite):
         drone1 = pygame.transform.smoothscale(drone1, (80, 80))
         self.images = [drone0, drone1]
         self.index = 0
-        
+
+        # Do not keep rotating a image again and again, 
+        # instead have a master with the original image and a temp list with the rotated image
         self.image = self.images[self.index]
- 
+        self.rotatedImage = []  
+        
         self.rect = pygame.Surface([50, 50])
         self.rect.set_alpha(128)
  
-    def update(self, x, y, is_flying):
+    def update(self, x, y, is_flying, yaw):
         # Show Sprite Animation if the drone is flying
         if is_flying:
             self.index += 1
@@ -431,6 +466,9 @@ class Sprite(pygame.sprite.Sprite):
             if self.index >= len(self.images):
                 self.index = 0
 
-        #self.images[self.index] = pygame.transform.rotate(self.images[self.index], yaw)
-        self.image = self.images[self.index]
-        self.rect = self.images[self.index].get_rect(center = (x, y))
+
+        self.rotatedImage.append(pygame.transform.rotate(self.images[self.index], yaw))
+        self.image = self.rotatedImage[0]
+        self.rect = self.rotatedImage[0].get_rect(center = (x, y))
+
+        del self.rotatedImage[0]
