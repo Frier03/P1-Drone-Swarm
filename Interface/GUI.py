@@ -344,7 +344,7 @@ class Gui:
     def __mission_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
         print('Start Mission')
-        self.SC.status = MissionStatus.Mission
+        self.SC.status = MissionStatus.Test
         pass
 
     def __stop_event(self, *args) -> None: # On event function

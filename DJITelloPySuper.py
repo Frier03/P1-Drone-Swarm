@@ -47,18 +47,21 @@ class Drone():
 
         self.dji = dji(host=newIP.strip(), retry_count=1)   #Generates an error after x (3) retries
         self.dji.LOGGER.setLevel(logging.ERROR)              #For debugging and output in terminal
-        try:
-            self.dji.connect()  #Is changed to timeout after 1 sec. Look package files
-            #Connect generates an error if not connected
-            self.dji.enable_mission_pads()
-            self.dji.set_mission_pad_detection_direction(2)
 
-            self.originalYaw = self.dji.get_yaw()           #Remember first yaw
-            self.connected = True
-            return True
-        except Exception as e:
-            print("exception", e)
-            return False
+        for i in range(3):      #Try connect up to 3 times
+            try:
+                self.dji.connect()  #Is changed to timeout after 1 sec. Look package files
+                #Connect generates an error if not connected
+                self.dji.enable_mission_pads()
+                self.dji.set_mission_pad_detection_direction(0)     #Forward and downward
+
+                self.originalYaw = self.dji.get_yaw()               #Remember first yaw
+
+                self.connected = True
+                return True
+            except Exception as e:
+                print("exception", e)
+        return False
 
 
     def mainUpdater(self):
@@ -100,6 +103,8 @@ class Drone():
 
     def jumpToPad(self, pad):
         pass
+    
+    
 
 
 
