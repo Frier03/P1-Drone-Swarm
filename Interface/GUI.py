@@ -428,7 +428,7 @@ class Gui:
             alt = drone.abs_z
             yaw = drone.rotation
 
-            drone_sprite.update(x, y, is_flying)
+            drone_sprite.update(x, y, is_flying, yaw)
             drone_sprite.draw(self.screen)
 
             if i < len(drones):
@@ -445,13 +445,15 @@ class Sprite(pygame.sprite.Sprite):
         drone1 = pygame.transform.smoothscale(drone1, (80, 80))
         self.images = [drone0, drone1]
         self.index = 0
+        self.oldyaw = 0
         
         self.image = self.images[self.index]
+        self.rotatedImages = [] # Do not keep rotating a image again and again, instead have a master with original image and a secondary with the rotated image
  
         self.rect = pygame.Surface([50, 50])
         self.rect.set_alpha(128)
  
-    def update(self, x, y, is_flying):
+    def update(self, x, y, is_flying, yaw):
         # Show Sprite Animation if the drone is flying
         if is_flying:
             self.index += 1
@@ -459,6 +461,9 @@ class Sprite(pygame.sprite.Sprite):
             if self.index >= len(self.images):
                 self.index = 0
 
-        #self.images[self.index] = pygame.transform.rotate(self.images[self.index], yaw)
-        self.image = self.images[self.index]
-        self.rect = self.images[self.index].get_rect(center = (x, y))
+
+        self.rotatedImages.append(pygame.transform.rotate(self.images[self.index], yaw))
+        self.image = self.rotatedImages[0]
+        self.rect = self.rotatedImages[0].get_rect(center = (x, y))
+
+        del self.rotatedImages[0]
