@@ -31,6 +31,7 @@ In order to contribute with git
 **Your hotspot must be enabled on 2.4 GHz only**
 - `python >= 3.10`
 - `pygame >= 2.0.0`
+- `pygame_widgets >= 1.1.0`
 - 'pip install -r requirements.txt'
 If PyGame gives errors, try `pip install pygame --pre`
 
