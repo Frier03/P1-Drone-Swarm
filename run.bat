@@ -34,7 +34,7 @@ for /F "" %%x in (requirements.txt) do (
                 ECHO Found an issue when trying to install pygame 
                 ECHO Trying to fix the issue...
                 CALL pip install pygame --pre
-                if errorlevel1 (
+                if errorlevel 1 (
                     ECHO Cannot fix the issue.
                     timeout /T 1 /NOBREAK
                 ) else (
