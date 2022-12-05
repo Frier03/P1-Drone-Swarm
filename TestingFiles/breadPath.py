@@ -20,7 +20,7 @@ pos_routes: list[int] = [ # Possible route combinations
     ]
 bQueue = 0
 
-def bfs(start, target):
+def bfs(start, target, disableSpots=[]):
     queue = [ [start] ]
     seen = [start]
 
@@ -30,12 +30,13 @@ def bfs(start, target):
         if path[-1] == target:
             return path
         for nextPaths in pos_routes[path[-1] - 1]:
-            if nextPaths not in seen:
+            if nextPaths not in seen and nextPaths not in disableSpots:
                 print("Appending", path + [nextPaths])
                 queue.append(path + [nextPaths])
                 seen.append(nextPaths)
         
 
-print("Found path =", bfs(1, 8))
+print("Found path =", bfs(4, 6, [2]))
+print(bfs(4, 6, [2]) != None)
 
 

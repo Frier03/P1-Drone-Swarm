@@ -6,14 +6,14 @@ import random
 
 class MissionStatus(enum.Enum):
     Idle = 0
-    Emergency = 1
-    Test = 2
+    Debug = 1
+    Emergency = 2
+    Test = 3
 
 
 class Swarm:
     drones: list[Drone] = []
     old_drones = []
-
     status = MissionStatus.Idle
 
     def __init__(self, macs=["FF-FF-FF-FF-FF"], offset=50, distanceBetweenPads=57):
@@ -24,12 +24,29 @@ class Swarm:
         T.daemon = True
         T.start()
     
-    def startMission(self):
-        self.status = MissionStatus.Test
+    
+    def CalcRoute(self, start, target, disabledSpots=[]):     #BREAD-th ALGORITHM
+        pos_routes: list[int] = [ # Possible route combinations
+        [2, 4], # Node 1
+        [1, 5, 3], # Node 2
+        [2, 6], # Node 3
+        [1, 5, 7], # Node 4
+        [2, 4, 8, 6], # Node 5
+        [3, 5], # Node 6
+        [4, 8], # Node 7
+        [5, 7] # Node 8
+        ]
+        queue = [ [start] ]
+        seen = [start]
 
-    def EMERGENCY(self):
-        self.status = MissionStatus.Emergency
-
+        while queue:
+            path = queue.pop(0)
+            if path[-1] == target:
+                return path
+            for nextPaths in pos_routes[path[-1] - 1]:
+                if nextPaths not in seen and nextPaths not in disabledSpots:
+                    queue.append(path + [nextPaths])
+                    seen.append(nextPaths)
 
     def findDrone(self, mac):
         for drone in self.drones:
@@ -37,6 +54,12 @@ class Swarm:
                 return drone
         return False
 
+
+    def startMission(self):
+        self.status = MissionStatus.Test
+
+    def EMERGENCY(self):
+        self.status = MissionStatus.Emergency
 
     def updateConnections(self, current_drones):
         """ Updates Drone Status depending on the paramater arg (list)"""
@@ -53,6 +76,7 @@ class Swarm:
         if len(just_connected) > 0:
             print("New connection", just_connected)
             for jc in just_connected:
+                sleep(3)
                 found = self.findDrone(jc[1])
                 if found:                           #Reconnect
                     found.setIp(jc[0])
@@ -73,52 +97,66 @@ class Swarm:
 
 
     def controller(self):       #THREAD
+        controllerCounter = 0
+        
+        target = 0
+
         while True:
             if self.status == MissionStatus.Emergency:
                 for drone in self.drones:
                     drone.dji.emergency()
                 self.status = MissionStatus.Idle
+
+            elif self.status == MissionStatus.Debug:
+                if controllerCounter == 0:
+                    print([drone.battery for drone in self.drones])
+                controllerCounter += 1
+
+                for drone in self.drones:
+                    print(f"{drone.mac} {drone.battery} {drone.abs_x:2} {drone.abs_y:2} |", end="")
+                print("")
             
+
             elif self.status == MissionStatus.Test:
-                pass
+                for drone in self.drones:
+                    if drone.lastSeenPad != drone.nextPad and not drone.is_flying:
+                        drone.shouldTakeoff = True
+                    else:
+                        print("MOVING")
+                        if "F6" in drone.mac: target = 1
+                        if "C6" in drone.mac: target = 8
+                        disabledSpots = []
+                        for d in self.drones:
+                            if drone.mac != d.mac:
+                                disabledSpots.append(d.nextPad)
+                                disabledSpots.append(d.lastSeenPad)
 
-                self.status = MissionStatus.Idle
+                        drone.route = self.CalcRoute(drone.mID, target, disabledSpots)
 
-            #Testing
-            for drone in self.drones:
-                #print(f"{drone.mac} {drone.abs_x:5} {drone.abs_y:5}   |", end="")
-                pass
-            #print("")
+                        print(f"{drone.mID=}   {drone.route=}")
+                        if drone.isCenter():
+                            print("Drone is center")
+                            if drone.route != None:
+                                if drone.route[-1] == drone.lastSeenPad:
+                                    print(drone.mac, "LANDING")
+                                    drone.shouldLand = True
+                                else:
+                                    print("Route:", drone.route, "Next pad =", drone.route[1])
+                                    drone.nextPad = drone.route[1]
+                            else: drone.nextPad = drone.mID
+                                
             
             sleep(1)
-
-    def CalcRoute(self, start, target):
-        pos_routes: list[int] = [ # Possible route combinations
-        [2, 4], # Node 1
-        [1, 5, 3], # Node 2
-        [2, 6], # Node 3
-        [1, 5, 7], # Node 4
-        [2, 4, 8, 6], # Node 5
-        [3, 5], # Node 6
-        [4, 8], # Node 7
-        [5, 7] # Node 8
-        ]
-        queue = [ [start] ]
-        seen = [start]
-
-        while queue:
-            path = queue.pop(0)
-            if path[-1] == target:
-                return path
-            for nextPaths in pos_routes[path[-1] - 1]:
-                if nextPaths not in seen:
-                    queue.append(path + [nextPaths])
-                    seen.append(nextPaths)
 
 
 
 if __name__ == "__main__":
-    SC = Swarm()
+    SC = Swarm(["F6"])
 
+    SC.updateConnections( [("192.168.137.199", "F6"), ("192.168.137.61", "C6")] )     #
+
+    SC.status = MissionStatus.Test
+
+    sleep(999)
 
 
