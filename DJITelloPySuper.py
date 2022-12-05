@@ -18,6 +18,11 @@ class Drone():
         self.is_flying = False
         self.connected = False
         self.guiStatus: str = "Connect"     #Connect, Disconnected, Connecting, Calibrated, Calibrating, Failed
+        self.route = []
+        self.nextPad = -1
+        self.shouldTakeoff = False
+        self.shouldLand = False
+
 
         self.mID = -1
         self.localX = -100
@@ -31,6 +36,7 @@ class Drone():
         self.totalSpeed = 0
         self.originalYaw = 0
 
+        self.isMoving = False
         self.lastSeenPad = 0
         self.isDataNew = False
         self.distanceBetweenPads = distanceBetweenPads
@@ -40,6 +46,12 @@ class Drone():
         T = Thread(target=self.mainUpdater)
         T.daemon = True
         T.start()
+
+        #Start mover thread
+        TPad = Thread(target=self.padder)
+        TPad.daemon = True
+        TPad.start()
+
 
     def setIp(self, newIP):
         self.connected = False
@@ -66,6 +78,11 @@ class Drone():
                 print("exception", e)
         return False
 
+    def isCenter(self):
+        if -10 < self.localX < 10 and -10 < self.localY < 10:
+            return True
+        return False
+
     def mainUpdater(self):
         while True:
             try:
@@ -89,8 +106,7 @@ class Drone():
                         self.abs_y = self.offset + (yRow * self.distanceBetweenPads) + (-self.localY)
                         self.abs_z = self.localZ
 
-                        print(f"{self.mID}  |  LOCAL {self.localX=:5} {self.localY=:5} {self.localZ=:5}          |          ABS {self.abs_x:5} {self.abs_y:5} {self.abs_z:5}")
-
+                        #print(f"{self.mID}  |  LOCAL {self.localX=:5} {self.localY=:5} {self.localZ=:5}   |  ABS {self.abs_x:5} {self.abs_y:5} {self.abs_z:5}")
 
                         self.lastSeenPad = self.mID
                         self.isDataNew = True
@@ -100,30 +116,43 @@ class Drone():
             except:
                 pass
                 #print("Is this updating the ip?")
-            sleep(0.5)
+            sleep(0.1)
 
 
     def GoToPad(self, pad):
-    
+        self.isMoving = True
         if self.mID == pad:             #Centering over pad
-            print("Centering") 
-            for i in range(3):
-                try:
-                    self.dji.go_xyz_speed_mid(0, 0, 120, 15, pad) #Changed timeout to 15
-                    break
-                except:
-                    print("Timeout error")
-                    if -10 < self.localX < 10 and -10 < self.localY <10:
-                        print("x og y er god")
-                        break
-        else:                           #Jumping to pad 
-            print("Jump to pad")
+            print("Centering over", pad)
+            try:    self.dji.go_xyz_speed_mid(0, 0, 80, 15, pad) #Changed timeout to 11
+            except: pass
+        else:                           #Jumping to pad
+            print("Jump to pad", pad)
             xRow = (self.mID-1)//3 - (pad-1)//3
             yRow = (self.mID-1) % 3 - (pad-1) % 3
             xRow = xRow * self.distanceBetweenPads
             yRow = yRow * self.distanceBetweenPads
+            try:    self.dji.go_xyz_speed_yaw_mid(xRow, yRow, 80, 50, 0, self.mID, pad)
+            except: pass
+            
+        self.isMoving = False
 
-            self.dji.go_xyz_speed_yaw_mid(xRow,yRow,80,50,0,self.mID,pad)
+
+    def padder(self):
+        while True:
+            if self.shouldTakeoff == True:
+                try:    self.dji.takeoff()
+                except: pass
+                self.shouldTakeoff = False
+            
+            if self.shouldLand == True:
+                try:    self.dji.land()
+                except: pass
+                self.shouldLand = False
+            
+            #print("PADDER", self.is_flying and self.nextPad != -1 and not self.isMoving)
+            if self.is_flying and self.nextPad != -1 and not self.isMoving:
+                self.GoToPad(self.nextPad)
+            sleep(0.1)
 
 
 
@@ -160,21 +189,36 @@ def testJump(drone):
             sleep(1)
             print('Well Done')
         drone.dji.land()
-        
+
 
 
 if __name__ == "__main__":
-    droneF = Drone()
-    droneF.setIp("192.168.137.5")
+    drone = Drone()
+    drone.setIp("192.168.137.236")
+    print(f"{drone.battery=} {drone.mac=}")
     
     
-    droneF.dji.takeoff()
-    
-    droneF.GoToPad(5)
-    droneF.GoToPad(4)
+    while not drone.is_flying:
+        drone.shouldTakeoff = True
+        print(".", end="")
+        sleep(0.1)
+    print("\nFlying")
 
-    droneF.dji.land()
+    print(f"{drone.is_flying=}")
 
+    path = [3, 2, 5, 8]
+    for i, pad in enumerate(path):
+        drone.nextPad = pad
+        print(f"Target sat: {drone.mID=}    {drone.nextPad=}")
+        while not ( drone.mID == drone.nextPad and drone.isCenter() ):
+            sleep(0.1)
     
+    print("MISSION ACCOMPLISHED")
+
+    drone.shouldLand = True
+    print("Done")
+    sleep(1)
 
     sleep(999)
+
+
