@@ -2,6 +2,7 @@ from DJITelloPySuper import Drone
 from time import sleep
 from threading import Thread
 import enum
+import random
 
 class MissionStatus(enum.Enum):
     Idle = 0
@@ -76,11 +77,12 @@ class Swarm:
             if self.status == MissionStatus.Emergency:
                 for drone in self.drones:
                     drone.dji.emergency()
-                self.status == MissionStatus.Idle
+                self.status = MissionStatus.Idle
             
             elif self.status == MissionStatus.Test:
                 pass
 
+                self.status = MissionStatus.Idle
 
             #Testing
             for drone in self.drones:
@@ -89,6 +91,29 @@ class Swarm:
             #print("")
             
             sleep(1)
+
+    def CalcRoute(self, start, target):
+        pos_routes: list[int] = [ # Possible route combinations
+        [2, 4], # Node 1
+        [1, 5, 3], # Node 2
+        [2, 6], # Node 3
+        [1, 5, 7], # Node 4
+        [2, 4, 8, 6], # Node 5
+        [3, 5], # Node 6
+        [4, 8], # Node 7
+        [5, 7] # Node 8
+        ]
+        queue = [ [start] ]
+        seen = [start]
+
+        while queue:
+            path = queue.pop(0)
+            if path[-1] == target:
+                return path
+            for nextPaths in pos_routes[path[-1] - 1]:
+                if nextPaths not in seen:
+                    queue.append(path + [nextPaths])
+                    seen.append(nextPaths)
 
 
 
