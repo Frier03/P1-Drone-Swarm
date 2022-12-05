@@ -71,7 +71,7 @@ class Swarm:
         self.old_drones = current_drones
 
 
-    def controller(self):
+    def controller(self):       #THREAD
         while True:
             if self.status == MissionStatus.Emergency:
                 for drone in self.drones:

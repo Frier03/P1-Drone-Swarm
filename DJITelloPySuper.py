@@ -102,28 +102,34 @@ class Drone():
                 #print("Is this updating the ip?")
             sleep(0.5)
 
+    def isCenter(self):
+        if -10 < self.localX < 10 and -10 < self.localY < 10:
+            return True
+        return False
+
 
     def GoToPad(self, pad):
-    
-        if self.mID == pad:             #Centering over pad
-            print("Centering") 
-            for i in range(3):
+        self.isMoving = True
+        for i in range(3):
+            if self.mID == pad:             #Centering over pad
+                print("Centering")
                 try:
-                    self.dji.go_xyz_speed_mid(0, 0, 120, 15, pad) #Changed timeout to 15
-                    break
+                    self.dji.go_xyz_speed_mid(0, 0, 80, 15, pad) #Changed timeout to 11
                 except:
-                    print("Timeout error")
-                    if -10 < self.localX < 10 and -10 < self.localY <10:
-                        print("x og y er god")
-                        break
-        else:                           #Jumping to pad 
-            print("Jump to pad")
-            xRow = (self.mID-1)//3 - (pad-1)//3
-            yRow = (self.mID-1) % 3 - (pad-1) % 3
-            xRow = xRow * self.distanceBetweenPads
-            yRow = yRow * self.distanceBetweenPads
-
-            self.dji.go_xyz_speed_yaw_mid(xRow,yRow,80,50,0,self.mID,pad)
+                    print("Centering TIMEOUT error")
+                    pass
+            
+            else:                           #Jumping to pad
+                print("Jump to pad")
+                xRow = (self.mID-1)//3 - (pad-1)//3
+                yRow = (self.mID-1) % 3 - (pad-1) % 3
+                xRow = xRow * self.distanceBetweenPads
+                yRow = yRow * self.distanceBetweenPads
+                
+                self.dji.go_xyz_speed_yaw_mid(xRow,yRow,80,50,0,self.mID,pad)
+            
+            if self.isCenter() and self.mID == pad: break
+        self.isMoving = False
 
 
 
@@ -165,16 +171,24 @@ def testJump(drone):
 
 if __name__ == "__main__":
     droneF = Drone()
-    droneF.setIp("192.168.137.5")
+    droneF.setIp("192.168.137.236")
     
     
     droneF.dji.takeoff()
-    
-    droneF.GoToPad(5)
-    droneF.GoToPad(4)
+
+
+    while True:
+
+        droneF.GoToPad(5)    
+
+
+        droneF.GoToPad(4)
+        droneF.GoToPad(2)
 
     droneF.dji.land()
 
     
 
     sleep(999)
+
+

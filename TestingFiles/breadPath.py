@@ -36,6 +36,6 @@ def bfs(start, target):
                 seen.append(nextPaths)
         
 
-print("Found path =", bfs(1, 4))
+print("Found path =", bfs(1, 8))
 
 
