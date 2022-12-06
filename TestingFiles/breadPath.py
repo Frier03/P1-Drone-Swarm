@@ -19,24 +19,45 @@ pos_routes: list[int] = [ # Possible route combinations
         [5, 7] # Node 8
     ]
 bQueue = 0
+paths = []
 
-def bfs(start, target, disableSpots=[]):
+def bfs(start, target, disabledSpots=[]):
     queue = [ [start] ]
     seen = [start]
 
     while queue:
         path = queue.pop(0)
-        print(path)
-        if path[-1] == target:
-            return path
+        paths.append(path)
+        print("path =", path)
+        if path[-1] == target: return path
         for nextPaths in pos_routes[path[-1] - 1]:
-            if nextPaths not in seen and nextPaths not in disableSpots:
-                print("Appending", path + [nextPaths])
+            if nextPaths not in seen and nextPaths not in disabledSpots:
                 queue.append(path + [nextPaths])
                 seen.append(nextPaths)
-        
 
-print("Found path =", bfs(4, 6, [2]))
-print(bfs(4, 6, [2]) != None)
+start = 1
+target = 6
+disabledSpots = [2, 5]
+print("Finding path from", start, "to", target)
+print("Blocked spots are", disabledSpots)
+foundPath = bfs(start, target, disabledSpots)
+
+print("Found path =", foundPath)
+if foundPath == None:
+    print("Path is blocked")
+    bestAlternative = ([1, 1, 1, 1], 9)    #Path, distance
+    for p in paths:
+        xRow = (p[-1]-1)//3 - (target-1)//3
+        yRow = (p[-1]-1) % 3 - (target-1) % 3
+        distance = abs(xRow) + abs(yRow)
+        print(p, "has distance", distance)
+        if distance < bestAlternative[1]:
+            bestAlternative = (p, distance)
+        elif distance == bestAlternative and len(p) < len( bestAlternative[0] ):
+            bestAlternative = (p, distance)
+                
+                
+    print("Best Alt", bestAlternative[0], "dist:", bestAlternative[1])
+
 
 
