@@ -185,6 +185,13 @@ class Gui:
 
                 drone = self.SC.findDrone( values[key]['MAC_ADDRESS'] )
 
+                # Draw drone battery
+                battery = drone.battery
+                battery = round((battery/20))*20
+                battery_img = pygame.image.load(f'Interface/battery {battery}.png')
+                battery_img = pygame.transform.smoothscale(battery_img, (40, 20))
+                self.screen.blit(battery_img, (295, y+55))
+
                 if drone.connected == True:
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Connected', color=(0, 255, 0), fontname='BostonBold')
 
