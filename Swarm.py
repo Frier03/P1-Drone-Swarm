@@ -26,6 +26,7 @@ class Swarm:
     
     
     def CalcRoute(self, start, target, disabledSpots=[]):     #BREAD-th ALGORITHM
+        if start <= 0 or target <= 0: return None
         pos_routes: list[int] = [ # Possible route combinations
         [2, 4], # Node 1
         [1, 5, 3], # Node 2
@@ -71,8 +72,15 @@ class Swarm:
         return False
 
 
-    def startMission(self):
-        self.status = MissionStatus.Test
+    def startMission(self, type):
+        for drone in self.drones:
+            drone.reset()
+        
+
+        if type == "Swap":
+            self.status = MissionStatus.Test
+
+        
 
     def EMERGENCY(self):
         self.status = MissionStatus.Emergency
@@ -130,18 +138,21 @@ class Swarm:
                 print("")
             
 
+
+
+
             elif self.status == MissionStatus.Test:
                 activeDrones = 0
 
                 for drone in self.drones:
-                    print(f"{drone.mac} | {drone.battery}%  STAGE: {drone.stage}  Route: {drone.route}")
+                    print(f"\n{drone.mac[-2:]} | {drone.battery}%  STAGE: {drone.stage}  Route: {drone.route} MID: {drone.mID}")
                     if drone.stage == drone.FlyingStage.Idle:
                         drone.shouldTakeoff = True
-                        print(drone.mac, "TAKEOFF")
+                        print("TAKEOFF")
                     elif drone.stage == drone.FlyingStage.MissionActive:
-                        if "F6" in drone.mac: target = 3
-                        if "C6" in drone.mac: target = 7
-                        disabledSpots = []
+                        if "F6" in drone.mac: target = 8
+                        if "C6" in drone.mac: target = 8
+                        disabledSpots = [5]
                         for d in self.drones:
                             if drone.mac != d.mac:
                                 disabledSpots.append(d.nextPad)

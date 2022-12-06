@@ -53,6 +53,9 @@ class Drone():
         self.isDataNew = False
         self.distanceBetweenPads = distanceBetweenPads
         self.offset = offset
+        
+
+        self.reset()
 
         #Start position updater thread
         T = Thread(target=self.mainUpdater)
@@ -89,6 +92,11 @@ class Drone():
             except Exception as e:
                 print("exception", e)
         return False
+
+    def reset(self):
+        self.route = []
+        self.nextPad = -1
+        self.stage = self.FlyingStage.Idle
 
     def isCenter(self):
         if -10 < self.localX < 10 and -10 < self.localY < 10:
