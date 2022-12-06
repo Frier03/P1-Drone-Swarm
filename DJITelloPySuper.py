@@ -5,9 +5,17 @@ import atexit
 import math
 import logging
 from threading import Thread
+import enum
+
+
+
 
 
 class Drone():
+    class FlyingStage(enum.Enum):
+        MissionDone = -1
+        Idle = 0
+        MissionActive = 1
 
     def __init__(self, mac="aa:aa:aa:aa:aa", offset = 50, distanceBetweenPads = 57):
         self.dji : dji = None
@@ -18,11 +26,11 @@ class Drone():
         self.is_flying = False
         self.connected = False
         self.guiStatus: str = "Connect"     #Connect, Disconnected, Connecting, Calibrated, Calibrating, Failed
+        self.stage = self.FlyingStage.Idle
 
         #--------- Swarm variables ----------------
         self.route = []
         self.nextPad = -1
-        self.completedMission = True
         self.shouldTakeoff = False
         self.shouldLand = False
 
@@ -127,11 +135,11 @@ class Drone():
     def GoToPad(self, pad):
         self.isMoving = True
         if self.mID == pad:             #Centering over pad
-            print("Centering over", pad)
+            #print("Centering over", pad)
             try:    self.dji.go_xyz_speed_mid(0, 0, 80, 15, pad) #Changed timeout to 11
             except: pass
         else:                           #Jumping to pad
-            print("Jump to pad", pad)
+            #print("Jump to pad", pad)
             xRow = (self.mID-1)//3 - (pad-1)//3
             yRow = (self.mID-1) % 3 - (pad-1) % 3
             xRow = xRow * self.distanceBetweenPads
@@ -145,19 +153,24 @@ class Drone():
     def padder(self):
         while True:
             if self.shouldTakeoff == True:
-                try:    self.dji.takeoff()
+                try:
+                    self.dji.takeoff()
+                    self.stage = self.FlyingStage.MissionActive
                 except: pass
                 self.shouldTakeoff = False
-                self.is_flying = True
             
+
+
             if self.shouldLand == True:
-                try:    self.dji.land()
+                try:
+                    self.dji.land()
+                    self.stage = self.FlyingStage.MissionDone
                 except: pass
                 self.shouldLand = False
-                self.is_flying = False
+                
             
             #print("PADDER", self.is_flying and self.nextPad != -1 and not self.isMoving)
-            if self.is_flying and self.nextPad != -1 and not self.isMoving:
+            if self.stage == self.FlyingStage.MissionActive and self.nextPad != -1 and not self.isMoving:
                 self.GoToPad(self.nextPad)
             sleep(0.1)
 
@@ -205,7 +218,7 @@ if __name__ == "__main__":
     print(f"{drone.battery=} {drone.mac=}")
     
     
-    while not drone.is_flying:
+    while not drone.stage == drone.FlyingStage.MissionActive:
         drone.shouldTakeoff = True
         print(".", end="")
         sleep(0.1)

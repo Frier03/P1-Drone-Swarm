@@ -116,6 +116,10 @@ class Swarm:
         controllerCounter = 0
 
         while True:
+            if self.status == MissionStatus.Idle:
+                pass
+                #print(".", end="")
+            
             if self.status == MissionStatus.Emergency:
                 for drone in self.drones:
                     drone.dji.emergency()
@@ -132,12 +136,14 @@ class Swarm:
             
 
             elif self.status == MissionStatus.Test:
+                activeDrones = 0
+
                 for drone in self.drones:
-                    if drone.lastSeenPad != drone.nextPad and not drone.is_flying:
+                    print(f"{drone.mac} | {drone.battery}%  STAGE: {drone.stage}  Route: {drone.route}")
+                    if drone.stage == drone.FlyingStage.Idle:
                         drone.shouldTakeoff = True
-                        drone.completedMission = False
-                    else:
-                        print("MOVING")
+                        print(drone.mac, "TAKEOFF")
+                    elif drone.stage == drone.FlyingStage.MissionActive:
                         if "F6" in drone.mac: target = 3
                         if "C6" in drone.mac: target = 7
                         disabledSpots = []
@@ -148,28 +154,32 @@ class Swarm:
 
                         drone.route = self.CalcRoute(drone.mID, target, disabledSpots)
 
-                        print(f"{drone.mID=}   {drone.route=}")
                         if drone.isCenter():
-                            print("Drone is center")
+                            #print("Drone is center")
                             if drone.route != None:
                                 if drone.route[0][-1] == drone.lastSeenPad and drone.route[1] == 0:
                                     print(drone.mac, "LANDING")
                                     drone.shouldLand = True
-                                    drone.completedMission = True
                                 elif len(drone.route[0]) == 1 and drone.route[1] != 0:
                                     pass
                                 else:
                                     #print("Route:", drone.route, "Next pad =", drone.route[0][1])
                                     drone.nextPad = drone.route[0][1]
                             else: drone.nextPad = drone.mID
-
+                    elif drone.stage == drone.FlyingStage.MissionDone:
+                        activeDrones += 1
+                    else: print("WTF")
                 
-                activeDrones = 0
-                for drone in self.drones:
-                    if not drone.completedMission: activeDrones += 1
-                if activeDrones == 0: self.status = MissionStatus.Idle
-                print("Mission complete" if activeDrones == 0 else "Active drones" + str(activeDrones))
-            sleep(0.2)
+                
+                
+                if activeDrones == len(self.drones):
+                    self.status = MissionStatus.Idle
+                    print("Mission complete")
+                else:
+                    #print("Active drones " + str(activeDrones))
+                    pass
+                
+            sleep(0.5)
 
 
 
@@ -178,7 +188,7 @@ if __name__ == "__main__":
 
     #print(SC.CalcRoute(1, 8, [8]) )
 
-    SC.updateConnections( [("192.168.137.150", "F6"), ("192.168.137.6", "C6")] )     #
+    SC.updateConnections( [("192.168.137.241", "F6"), ("192.168.137.232", "C6")] )     #
 
     SC.status = MissionStatus.Test
 
