@@ -459,6 +459,11 @@ class Gui:
             alt = drone.abs_z
             yaw = -drone.rotation
             
+            x+= 100
+            y+= 100
+            
+            drone.route = [1, 4, 7]
+            
             # Draw drone route on map
             for j, node in enumerate(drone.route):
                 for i, end_position in enumerate(grid):
@@ -473,6 +478,14 @@ class Gui:
                         if node == drone.route[-1]: # At the last node in route
                             # Draw Target Flag
                             self.screen.blit(location_target, (end_position[0]-7, end_position[1]-20)) # Align to center
+                            
+                            # Show distance from drone to target flag (last node on route)
+                            distance = (abs(x) + abs(y)) - (abs(end_position[0]+5) + abs(end_position[1]+15))
+                            
+                            text = pygame.font.SysFont("Helvetica.ttf", 14).render(f'{round(abs(distance/100), 1)}m', True, (0,0,0))
+                            textRect = text.get_rect()
+                            textRect.center = ((end_position[0]+5, end_position[1]+15))
+                            self.screen.blit(text, textRect)
             
             # Update Drone animation
             drone_sprite.update(x, y, stage, is_flying, yaw)
