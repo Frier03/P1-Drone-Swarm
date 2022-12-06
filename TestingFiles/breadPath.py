@@ -21,6 +21,7 @@ pos_routes: list[int] = [ # Possible route combinations
 bQueue = 0
 
 def bfs(start, target, disabledSpots=[]):
+    if start <= 0 or target <= 0: return None
     queue = [ [start] ]
     seen = [start]
     allPaths = []          #Saves all paths
@@ -51,8 +52,8 @@ def bfs(start, target, disabledSpots=[]):
 
 
 
-start = 2
-target = 5
+start = 1
+target = -9
 disabledSpots = [5]
 print("Finding path from", start, "to", target)
 print("Blocked spots are", disabledSpots)
