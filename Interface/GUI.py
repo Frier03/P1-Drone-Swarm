@@ -458,8 +458,6 @@ class Gui:
             alt = drone.abs_z
             yaw = -drone.rotation
             
-            drone.route = [1, 2, 3, 6]
-            
             # Draw drone route on map
             for j, node in enumerate(drone.route):
                 for i, end_position in enumerate(grid):
