@@ -63,8 +63,14 @@ class Gui:
         # Add Connect to All Drones Button
         self.connectall_button = self.__add_button(value='Connect to All', x=100, y=self.__adapter_y, w=150, h=30, execfunction=self.__connnect_to_all_event)
 
-        # Add Connect to All Drones Button
-        self.mission_button = self.__add_button(value='Mission', x=100, y=self.__adapter_y+50, w=150, h=30, execfunction=self.__mission_event)
+        # Add Custom Adapter Title
+        self.__add_text(value='Available Missions', x=100,y=self.__adapter_y+75, bold=True, fontsize=25)
+        # Add Swap Drones Button
+        self.mission_button = self.__add_button(value='Swap', x=100, y=self.__adapter_y+125, w=150, h=30, execfunction=self.__mission_event, execfunctionParams='Swap')
+
+        # Add  Drones Button
+        self.mission_button = self.__add_button(value='Random Pad', x=100, y=self.__adapter_y+175, w=150, h=30, execfunction=self.__mission_event, execfunctionParams='Random Pad')
+
 
         # Add Stop Button
         self.stop_button = self.__add_button(value='STOP', x=100, y=700, execfunction=self.__stop_event, radius=20, shadowColour=(230, 158, 159), inactiveColour=(239, 142, 143), pressedColour=(207, 117, 118), hoverColour=(245, 125, 126))
@@ -344,8 +350,14 @@ class Gui:
     def __mission_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
         print('Start Mission')
-        self.SC.status = MissionStatus.Test
-        pass
+        missionType = "".join(args)            #Convert *args back to string
+        print(missionType)
+        
+        if "Swap" in missionType:
+            pass
+
+        elif "Random Pad" in missionType:
+            pass
 
     def __stop_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
@@ -407,11 +419,9 @@ class Gui:
 
         # Set the position of the map
         mapStartpointX, mapStartpointY = mapX, mapY
-        mapEndpointX, mapEndpointY = mapX + mapW, mapY + mapH
 
         # Calculate the 0,0 position of the map to the end points
         threshold_x, threshold_y = mapStartpointX+25, mapStartpointY+25 # + droneSize/2
-        #threshold_x, threshold_y = 0, 0     #DELETE ME
 
         # Draw Shadow
         pygame.draw.rect(self.screen, (217,222,224, 10), pygame.Rect(mapX-shadowDistance, mapY-shadowDistance, mapW+(shadowDistance*2), mapH+(shadowDistance*2)),border_radius=rad)
@@ -435,10 +445,28 @@ class Gui:
             alt = drone.abs_z
             yaw = -drone.rotation
 
-            #if drone.connected: print(f"{x_factor=} {y_factor=} | {x=} {y=}")
-
             drone_sprite.update(x, y, is_flying, yaw)
             drone_sprite.draw(self.screen)
+
+            textContent = []
+            textContent.append('SPD(m/s): ' + str(spd))
+            textContent.append('ALT(m/s): ' + str(alt))
+
+            font = pygame.font.SysFont("Helvetica.ttf", 15)
+
+            for j, content in enumerate(textContent):
+                    # Render text
+                    text = font.render(content, True, (0,0,0))
+
+                    # text surface object
+                    textRect = text.get_rect()
+
+                    # set text slighty under drone
+                    textRect.center = (x, y+30+(j*10))
+                    # copying the text surface objects
+                    # to the display surface objects
+                    # at the center coordinate.
+                    self.screen.blit(text, textRect)
 
             if i < len(drones):
                 i+=1
