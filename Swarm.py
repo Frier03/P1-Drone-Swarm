@@ -114,8 +114,6 @@ class Swarm:
 
     def controller(self):       #THREAD
         controllerCounter = 0
-        
-        target = 0
 
         while True:
             if self.status == MissionStatus.Emergency:
@@ -137,6 +135,7 @@ class Swarm:
                 for drone in self.drones:
                     if drone.lastSeenPad != drone.nextPad and not drone.is_flying:
                         drone.shouldTakeoff = True
+                        drone.completedMission = False
                     else:
                         print("MOVING")
                         if "F6" in drone.mac: target = 3
@@ -156,14 +155,21 @@ class Swarm:
                                 if drone.route[0][-1] == drone.lastSeenPad and drone.route[1] == 0:
                                     print(drone.mac, "LANDING")
                                     drone.shouldLand = True
+                                    drone.completedMission = True
                                 elif len(drone.route[0]) == 1 and drone.route[1] != 0:
                                     pass
                                 else:
-                                    print("Route:", drone.route, "Next pad =", drone.route[0][1])
+                                    #print("Route:", drone.route, "Next pad =", drone.route[0][1])
                                     drone.nextPad = drone.route[0][1]
                             else: drone.nextPad = drone.mID
-                                
-            sleep(1)
+
+                
+                activeDrones = 0
+                for drone in self.drones:
+                    if not drone.completedMission: activeDrones += 1
+                if activeDrones == 0: self.status = MissionStatus.Idle
+                print("Mission complete" if activeDrones == 0 else "Active drones" + str(activeDrones))
+            sleep(0.2)
 
 
 

@@ -12,18 +12,21 @@ class Drone():
     def __init__(self, mac="aa:aa:aa:aa:aa", offset = 50, distanceBetweenPads = 57):
         self.dji : dji = None
 
-        #Custom variables -----------------------
+        #--------- Info variables ----------------
         self.ip = 0
         self.mac = mac
         self.is_flying = False
         self.connected = False
         self.guiStatus: str = "Connect"     #Connect, Disconnected, Connecting, Calibrated, Calibrating, Failed
+
+        #--------- Swarm variables ----------------
         self.route = []
         self.nextPad = -1
+        self.completedMission = True
         self.shouldTakeoff = False
         self.shouldLand = False
 
-
+        #--------- Drone variables ----------------
         self.mID = -1
         self.localX = -100
         self.localY = -100
@@ -35,6 +38,7 @@ class Drone():
         self.battery = 0
         self.totalSpeed = 0
         self.originalYaw = 0
+        self.timeOfFlight = -1
 
         self.isMoving = False
         self.lastSeenPad = 0
@@ -61,7 +65,7 @@ class Drone():
             del self.dji
 
         self.dji = dji(host=newIP.strip(), retry_count=1)   #Generates an error after x (3) retries
-        self.dji.LOGGER.setLevel(logging.INFO)              #For debugging and output in terminal
+        self.dji.LOGGER.setLevel(logging.ERROR)              #For debugging and output in terminal
 
         for i in range(3):      #Try connect up to 3 times
             try:
@@ -87,10 +91,11 @@ class Drone():
         while True:
             try:
                 if self.connected:
-                    self.is_flying = self.dji.is_flying
+                    #self.is_flying = self.dji.is_flying        #We made our own
                     self.rotation = self.dji.get_yaw() - self.originalYaw
                     self.totalSpeed = math.sqrt(self.dji.get_speed_x()**2 + self.dji.get_speed_y()**2 + self.dji.get_speed_z()**2)
                     self.battery = self.dji.get_battery()
+                    self.timeOfFlight = self.dji.get_flight_time()
 
                     #POSITION CALCULATIONS
                     self.mID = self.dji.get_mission_pad_id()
@@ -143,11 +148,13 @@ class Drone():
                 try:    self.dji.takeoff()
                 except: pass
                 self.shouldTakeoff = False
+                self.is_flying = True
             
             if self.shouldLand == True:
                 try:    self.dji.land()
                 except: pass
                 self.shouldLand = False
+                self.is_flying = False
             
             #print("PADDER", self.is_flying and self.nextPad != -1 and not self.isMoving)
             if self.is_flying and self.nextPad != -1 and not self.isMoving:

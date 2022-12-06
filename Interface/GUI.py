@@ -349,15 +349,14 @@ class Gui:
 
     def __mission_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
-        print('Start Mission')
         missionType = "".join(args)            #Convert *args back to string
-        print(missionType)
+        print('Start Mission', missionType)
         
-        if "Swap" in missionType:
-            pass
-
-        elif "Random Pad" in missionType:
-            pass
+        if self.SC.status == MissionStatus.Idle:
+            if "Swap" in missionType:
+                self.SC.status = MissionStatus.Test
+            elif "Random Pad" in missionType:
+                pass
 
     def __stop_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
@@ -441,7 +440,7 @@ class Gui:
             x, y = (x + threshold_x, y + threshold_y)
             # Switch x, y to y, x since our map in real is reversed
             is_flying = drone.is_flying
-            spd = drone.totalSpeed
+            spd = round(drone.totalSpeed, 1)
             alt = drone.abs_z
             yaw = -drone.rotation
 
