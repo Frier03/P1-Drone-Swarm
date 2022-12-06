@@ -158,9 +158,7 @@ class Drone():
                     self.stage = self.FlyingStage.MissionActive
                 except: pass
                 self.shouldTakeoff = False
-            
-
-
+                
             if self.shouldLand == True:
                 try:
                     self.dji.land()

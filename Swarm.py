@@ -113,8 +113,6 @@ class Swarm:
 
 
     def controller(self):       #THREAD
-        controllerCounter = 0
-
         while True:
             if self.status == MissionStatus.Idle:
                 pass
@@ -126,9 +124,6 @@ class Swarm:
                 self.status = MissionStatus.Idle
 
             elif self.status == MissionStatus.Debug:
-                if controllerCounter == 0:
-                    print([drone.battery for drone in self.drones])
-                controllerCounter += 1
 
                 for drone in self.drones:
                     print(f"{drone.mac} {drone.battery} {drone.abs_x:2} {drone.abs_y:2} |", end="")
@@ -190,7 +185,7 @@ if __name__ == "__main__":
 
     SC.updateConnections( [("192.168.137.241", "F6"), ("192.168.137.232", "C6")] )     #
 
-    SC.status = MissionStatus.Test
+    SC.status = MissionStatus.Debug
 
     sleep(999)
 
