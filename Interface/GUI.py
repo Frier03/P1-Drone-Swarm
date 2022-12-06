@@ -65,13 +65,13 @@ class Gui:
 
         # Add Custom Adapter Title
         self.__add_text(value='Available Missions', x=100,y=self.__adapter_y+75, bold=True, fontsize=25)
+        
         # Add Swap Drones Button
         self.mission_button = self.__add_button(value='Swap', x=100, y=self.__adapter_y+125, w=150, h=30, execfunction=self.__mission_event, execfunctionParams='Swap')
 
-        # Add  Drones Button
+        # Add  Random Pad Button
         self.mission_button = self.__add_button(value='Random Pad', x=100, y=self.__adapter_y+175, w=150, h=30, execfunction=self.__mission_event, execfunctionParams='Random Pad')
-
-
+                
         # Add Stop Button
         self.stop_button = self.__add_button(value='STOP', x=100, y=700, execfunction=self.__stop_event, radius=20, shadowColour=(230, 158, 159), inactiveColour=(239, 142, 143), pressedColour=(207, 117, 118), hoverColour=(245, 125, 126))
 
@@ -441,6 +441,7 @@ class Gui:
                 grid.append([posX, posY])
         
         drones = self.SC.drones
+        location_target = pygame.image.load(f'Interface/map-pin.png')
 
         i=0
         for drone in drones:
@@ -458,7 +459,7 @@ class Gui:
             alt = drone.abs_z
             yaw = -drone.rotation
             
-            drone.route = [1, 2, 3, 6]
+            drone.route = [1]
             
             # Draw drone route on map
             for j, node in enumerate(drone.route):
@@ -470,9 +471,13 @@ class Gui:
                             start_position = (x, y)
                         else: # Any other nodes that has a node behind
                             start_position = grid[drone.route[j-1]-1] 
+                            
+                        pygame.draw.line(self.screen, (0, 255, 0), (start_position[0]+5, start_position[1]+5), (end_position[0]+5, end_position[1]+5), 1)
                         
-                        pygame.draw.line(self.screen, (0, 255, 0), start_position, end_position, 3)
-                        
+                        if node == drone.route[-1]: # At the last node in route
+                            # Draw Target Flag
+                            self.screen.blit(location_target, (end_position[0]-7, end_position[1]-20))
+            
             # Update Drone animation
             drone_sprite.update(x, y, stage, is_flying, yaw)
             drone_sprite.draw(self.screen)
