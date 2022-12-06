@@ -418,8 +418,6 @@ class Gui:
         mapW, mapH = 900, 650
 
         realW, realH = 220, 220
-        rad = 2
-        shadowDistance = 2
 
         # Set the position of the map
         mapStartpointX, mapStartpointY = mapX, mapY
@@ -427,12 +425,23 @@ class Gui:
         # Calculate the 0,0 position of the map to the end points
         threshold_x, threshold_y = mapStartpointX+25, mapStartpointY+25 # + droneSize/2
 
-        # Draw Shadow
-        pygame.draw.rect(self.screen, (217,222,224, 10), pygame.Rect(mapX-shadowDistance, mapY-shadowDistance, mapW+(shadowDistance*2), mapH+(shadowDistance*2)),border_radius=rad)
+        # Draw Map Shadow
+        pygame.draw.rect(self.screen, (217,222,224, 10), pygame.Rect(mapX-2, mapY-2, mapW+4, mapH+4),border_radius=2)
 
-        # Draw Box
-        pygame.draw.rect(self.screen, (255,255,255), pygame.Rect(mapX, mapY, mapW, mapH),border_radius=rad)
+        # Draw Map
+        pygame.draw.rect(self.screen, (255,255,255), pygame.Rect(mapX, mapY, mapW, mapH),border_radius=2)
 
+        # Draw 'Manhattan grid' on map
+        grid = []
+        id = 0
+        for i in range(3): # y axis
+            posY = mapY+(i*(mapH/3)+100)
+            for j in range(3): # x axis
+                posX = mapX+(j*(mapW/3)+150)
+                pygame.draw.ellipse(self.screen, (0, 0, 0), pygame.Rect(posX, posY, 10, 10))
+                id+=1
+                grid.append([posX, posY])
+        
         drones = self.SC.drones
 
         i=0
@@ -443,12 +452,28 @@ class Gui:
             
             x, y= (drone.abs_y * x_factor, drone.abs_x * y_factor)
             x, y = (x + threshold_x, y + threshold_y)
+
             # Switch x, y to y, x since our map in real is reversed
             stage = drone.stage
             is_flying = drone.FlyingStage.MissionActive
             spd = round(drone.totalSpeed, 1)
             alt = drone.abs_z
             yaw = -drone.rotation
+
+            drone.route = [1, 2, 5]
+            
+            # Draw drone route on map
+            for node in drone.route:
+                for i, end_position in enumerate(grid):
+                    i+=1
+                    
+                    if node == i:
+                        print(grid[node])
+                        if i == 0:
+                            start_position = (x, y)
+                        else: 
+                            start_position = grid[node]
+                        pygame.draw.line(self.screen, (0, 255, 0), start_position, end_position, 3)
 
             drone_sprite.update(x, y, stage, is_flying, yaw)
             drone_sprite.draw(self.screen)
@@ -457,20 +482,11 @@ class Gui:
             textContent.append('SPD(m/s): ' + str(spd))
             textContent.append('ALT(m/s): ' + str(alt))
 
-            font = pygame.font.SysFont("Helvetica.ttf", 15)
-
+            # Show text under drone image
             for j, content in enumerate(textContent):
-                    # Render text
-                    text = font.render(content, True, (0,0,0))
-
-                    # text surface object
+                    text = pygame.font.SysFont("Helvetica.ttf", 15).render(content, True, (0,0,0))
                     textRect = text.get_rect()
-
-                    # set text slighty under drone
                     textRect.center = (x, y+30+(j*10))
-                    # copying the text surface objects
-                    # to the display surface objects
-                    # at the center coordinate.
                     self.screen.blit(text, textRect)
 
             if i < len(drones):
