@@ -459,14 +459,10 @@ class Gui:
             alt = drone.abs_z
             yaw = -drone.rotation
             
-            drone.route = [1]
-            
             # Draw drone route on map
             for j, node in enumerate(drone.route):
                 for i, end_position in enumerate(grid):
-                    i+=1
-
-                    if node == i:
+                    if node == i+1:
                         if node == drone.route[0]: # Draw line from drone to first node
                             start_position = (x, y)
                         else: # Any other nodes that has a node behind
@@ -476,7 +472,7 @@ class Gui:
                         
                         if node == drone.route[-1]: # At the last node in route
                             # Draw Target Flag
-                            self.screen.blit(location_target, (end_position[0]-7, end_position[1]-20))
+                            self.screen.blit(location_target, (end_position[0]-7, end_position[1]-20)) # Align to center
             
             # Update Drone animation
             drone_sprite.update(x, y, stage, is_flying, yaw)
