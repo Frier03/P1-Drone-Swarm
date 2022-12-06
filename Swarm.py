@@ -38,15 +38,31 @@ class Swarm:
         ]
         queue = [ [start] ]
         seen = [start]
+        allPaths = []          #Saves all paths
 
+        # ORIGINAL BREAD'th algorithm
         while queue:
             path = queue.pop(0)
-            if path[-1] == target:
-                return path
+            allPaths.append(path)
+            if path[-1] == target: return (path, 0)
             for nextPaths in pos_routes[path[-1] - 1]:
                 if nextPaths not in seen and nextPaths not in disabledSpots:
                     queue.append(path + [nextPaths])
                     seen.append(nextPaths)
+    
+        # Expanded Bread. Nearest spot if no path found
+        # Path is blocked
+        nearestPath = ([1, 1, 1, 1], 9)    #Path, distance
+        for p in allPaths:
+            xRow = (p[-1]-1)//3 - (target-1)//3
+            yRow = (p[-1]-1) % 3 - (target-1) % 3
+            dist = abs(xRow) + abs(yRow)
+            if dist < nearestPath[1]:
+                nearestPath = (p, dist)
+            elif dist == nearestPath and len(p) < len( nearestPath[0] ):
+                nearestPath = (p, dist)
+        return nearestPath
+
 
     def findDrone(self, mac):
         for drone in self.drones:
@@ -123,8 +139,8 @@ class Swarm:
                         drone.shouldTakeoff = True
                     else:
                         print("MOVING")
-                        if "F6" in drone.mac: target = 1
-                        if "C6" in drone.mac: target = 8
+                        if "F6" in drone.mac: target = 3
+                        if "C6" in drone.mac: target = 7
                         disabledSpots = []
                         for d in self.drones:
                             if drone.mac != d.mac:
@@ -137,15 +153,16 @@ class Swarm:
                         if drone.isCenter():
                             print("Drone is center")
                             if drone.route != None:
-                                if drone.route[-1] == drone.lastSeenPad:
+                                if drone.route[0][-1] == drone.lastSeenPad and drone.route[1] == 0:
                                     print(drone.mac, "LANDING")
                                     drone.shouldLand = True
+                                elif len(drone.route[0]) == 1 and drone.route[1] != 0:
+                                    pass
                                 else:
-                                    print("Route:", drone.route, "Next pad =", drone.route[1])
-                                    drone.nextPad = drone.route[1]
+                                    print("Route:", drone.route, "Next pad =", drone.route[0][1])
+                                    drone.nextPad = drone.route[0][1]
                             else: drone.nextPad = drone.mID
                                 
-            
             sleep(1)
 
 
@@ -153,7 +170,9 @@ class Swarm:
 if __name__ == "__main__":
     SC = Swarm(["F6"])
 
-    SC.updateConnections( [("192.168.137.199", "F6"), ("192.168.137.61", "C6")] )     #
+    #print(SC.CalcRoute(1, 8, [8]) )
+
+    SC.updateConnections( [("192.168.137.150", "F6"), ("192.168.137.6", "C6")] )     #
 
     SC.status = MissionStatus.Test
 
