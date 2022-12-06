@@ -433,13 +433,11 @@ class Gui:
 
         # Draw 'Manhattan grid' on map
         grid = []
-        id = 0
         for i in range(3): # y axis
             posY = mapY+(i*(mapH/3)+100)
             for j in range(3): # x axis
                 posX = mapX+(j*(mapW/3)+150)
                 pygame.draw.ellipse(self.screen, (0, 0, 0), pygame.Rect(posX, posY, 10, 10))
-                id+=1
                 grid.append([posX, posY])
         
         drones = self.SC.drones
@@ -459,25 +457,26 @@ class Gui:
             spd = round(drone.totalSpeed, 1)
             alt = drone.abs_z
             yaw = -drone.rotation
-
-            drone.route = [1, 2, 5]
+            
+            drone.route = [1, 2, 3, 6]
             
             # Draw drone route on map
-            for node in drone.route:
+            for j, node in enumerate(drone.route):
                 for i, end_position in enumerate(grid):
                     i+=1
-                    
-                    if node == i:
-                        print(grid[node])
-                        if i == 0:
-                            start_position = (x, y)
-                        else: 
-                            start_position = grid[node]
-                        pygame.draw.line(self.screen, (0, 255, 0), start_position, end_position, 3)
 
+                    if node == i:
+                        if node == drone.route[0]: # Draw line from drone to first node
+                            start_position = (x, y)
+                        else: # Any other nodes that has a node behind
+                            start_position = grid[drone.route[j-1]-1] 
+                        
+                        pygame.draw.line(self.screen, (0, 255, 0), start_position, end_position, 3)
+                        
+            # Update Drone animation
             drone_sprite.update(x, y, stage, is_flying, yaw)
             drone_sprite.draw(self.screen)
-
+            
             textContent = []
             textContent.append('SPD(m/s): ' + str(spd))
             textContent.append('ALT(m/s): ' + str(alt))
