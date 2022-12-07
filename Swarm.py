@@ -150,9 +150,9 @@ class Swarm:
                         drone.shouldTakeoff = True
                         print("TAKEOFF")
                     elif drone.stage == drone.FlyingStage.MissionActive:
-                        if "F6" in drone.mac: target = 8
+                        if "F6" in drone.mac: target = 7
                         if "C6" in drone.mac: target = 8
-                        disabledSpots = [5]
+                        disabledSpots = []
                         for d in self.drones:
                             if drone.mac != d.mac:
                                 disabledSpots.append(d.nextPad)
