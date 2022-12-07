@@ -1,4 +1,4 @@
-from DJITelloPySuper import Drone
+from Drone import Drone
 from time import sleep
 from threading import Thread
 import enum

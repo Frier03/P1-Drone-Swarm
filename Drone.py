@@ -8,9 +8,6 @@ from threading import Thread
 import enum
 
 
-
-
-
 class Drone():
     class FlyingStage(enum.Enum):
         MissionDone = -1
