@@ -29,7 +29,7 @@ class Drone():
         self.stage = self.FlyingStage.Idle
 
         #--------- Swarm variables ----------------
-        self.route = []
+        self.route = None
         self.nextPad = -1
         self.shouldTakeoff = False
         self.shouldLand = False
@@ -94,7 +94,7 @@ class Drone():
         return False
 
     def reset(self):
-        self.route = []
+        self.route = None
         self.nextPad = -1
         self.stage = self.FlyingStage.Idle
 
@@ -169,9 +169,12 @@ class Drone():
                 
             if self.shouldLand == True:
                 try:
-                    self.dji.land()
-                    self.stage = self.FlyingStage.MissionDone
+                    self.dji.go_xyz_speed_mid(0, 0, 30, 10, self.mID)
                 except: pass
+                try:
+                    self.dji.land()
+                except: pass
+                self.stage = self.FlyingStage.MissionDone
                 self.shouldLand = False
                 
             

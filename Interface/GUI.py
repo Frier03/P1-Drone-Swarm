@@ -18,6 +18,12 @@ class Gui:
         self.connect_buttons = list() # Holds each button on our custom adapter selection list
         self.selected_value = None
         self.drone_img = pygame.image.load('Interface/drone.png')
+        self.location_target = pygame.image.load(f'Interface/map-pin.png')
+        self.bat_images = []
+        for i in range(0, 100, 20):
+            img = pygame.image.load(f'Interface/battery {i}.png')
+            img = pygame.transform.smoothscale(img, (40, 20))
+            self.bat_images.append(img)
         self.popup_run = False
 
         # Init Drone Animation for each drone (groups)
@@ -187,10 +193,8 @@ class Gui:
 
                 # Draw drone battery
                 battery = drone.battery
-                battery = round((battery/20))*20
-                battery_img = pygame.image.load(f'Interface/battery {battery}.png')
-                battery_img = pygame.transform.smoothscale(battery_img, (40, 20))
-                self.screen.blit(battery_img, (295, y+55))
+                battery = round((battery/20))
+                self.screen.blit(self.bat_images[battery], (295, y+55))
 
                 if drone.connected == True:
                     self.__add_text(x=275, y=y+12, fontsize=12, value='Connected', color=(0, 255, 0), fontname='BostonBold')
@@ -441,11 +445,10 @@ class Gui:
                 grid.append([posX, posY])
         
         drones = self.SC.drones
-        location_target = pygame.image.load(f'Interface/map-pin.png')
 
-        i=0
-        for drone in drones:
-            drone_sprite = self.groups[i]
+        for k, drone in enumerate(drones):
+            drone_sprite = self.groups[k]
+    
             x_factor = mapW/realW
             y_factor = mapH/realH
             
@@ -460,19 +463,26 @@ class Gui:
             yaw = -drone.rotation
             
             # Draw drone route on map
-            for j, node in enumerate(drone.route):
+            if drone.route != None: route = drone.route[0]      #Only draw if a route has been assigned
+            else: route = []
+
+            for j, node in enumerate(route):
                 for i, end_position in enumerate(grid):
                     if node == i+1:
-                        if node == drone.route[0]: # Draw line from drone to first node
+                        if node == route[0]: # Draw line from drone to first node
                             start_position = (x, y)
                         else: # Any other nodes that has a node behind
-                            start_position = grid[drone.route[j-1]-1] 
-                            
-                        pygame.draw.line(self.screen, (0, 255, 0), (start_position[0]+5, start_position[1]+5), (end_position[0]+5, end_position[1]+5), 1)
+                            start_position = grid[route[j-1]-1] 
                         
-                        if node == drone.route[-1]: # At the last node in route
+                        if drone.route[1] == 0: c = (0, 255, 0)
+                        else:                   c = (255, 255, 0)
+
+                        pygame.draw.line(self.screen, c, (start_position[0]+5, start_position[1]+5), (end_position[0]+5, end_position[1]+5), 1)
+                        
+
+                        if node == route[-1] and drone.route[1] == 0: # At the last node in route and if not blocked route
                             # Draw Target Flag
-                            self.screen.blit(location_target, (end_position[0]-7, end_position[1]-20)) # Align to center
+                            self.screen.blit(self.location_target, (end_position[0]-7, end_position[1]-20)) # Align to center
                             
                             # Show distance from drone to target flag (last node on route)
                             distance = (abs(x) + abs(y)) - (abs(end_position[0]+5) + abs(end_position[1]+15))
@@ -497,10 +507,6 @@ class Gui:
                     textRect.center = (x, y+30+(j*10))
                     self.screen.blit(text, textRect)
 
-            if i < len(drones):
-                i+=1
-            else: i=0
-
 class Sprite(pygame.sprite.Sprite):
     def __init__(self):
         super(Sprite, self).__init__()
@@ -522,11 +528,17 @@ class Sprite(pygame.sprite.Sprite):
  
     def update(self, x, y, stage, is_flying, yaw):
         # Show Sprite Animation if the drone is flying
+        #print(stage, is_flying)
         if stage == is_flying:
+            #print("[+] Do animation")
             self.index += 1
 
             if self.index >= len(self.images):
                 self.index = 0
+
+        else:
+            pass
+            #print("[-] Dont do animation")
 
 
         self.rotatedImage.append(pygame.transform.rotate(self.images[self.index], yaw))
