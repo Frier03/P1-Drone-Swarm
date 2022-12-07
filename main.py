@@ -23,24 +23,20 @@ class App:
 
     def run(self):
         """Run the main event loop."""
-        try:
-            while App.running:
-                # Load GUI
-                self.gui() # Calls "__call__" inside gui class
-                for event in pygame.event.get():
-                    if event.type == QUIT:
-                        App.running = False
+        while App.running:          #Could be encapsuled in a try except
+            # Load GUI
+            self.gui() # Calls "__call__" inside gui class
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    App.running = False
+        
+            # Call once every loop to allow widgets to render and listen
+            pygame_widgets.update(pygame.event.get())
             
-                # Call once every loop to allow widgets to render and listen
-                pygame_widgets.update(pygame.event.get())
-                
-                # Update now all changes from above to the screen
-                pygame.display.update()
+            # Update now all changes from above to the screen
+            pygame.display.update()
 
-                self.clock.tick(20)
-
-        except Exception as e:
-            print(e)
+            self.clock.tick(20)
 
         self.onClose()
 

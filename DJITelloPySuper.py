@@ -220,7 +220,6 @@ def testJump(drone):
         drone.dji.land()
 
 
-
 if __name__ == "__main__":
     drone = Drone()
     drone.setIp("192.168.137.236")

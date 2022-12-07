@@ -20,7 +20,7 @@ class Gui:
         self.drone_img = pygame.image.load('Interface/drone.png')
         self.location_target = pygame.image.load(f'Interface/map-pin.png')
         self.bat_images = []
-        for i in range(0, 100, 20):
+        for i in range(0, 101, 20):     #0, 20, 40, 60, 80, 100
             img = pygame.image.load(f'Interface/battery {i}.png')
             img = pygame.transform.smoothscale(img, (40, 20))
             self.bat_images.append(img)
@@ -369,8 +369,8 @@ class Gui:
 
     def __stop_event(self, *args) -> None: # On event function
         """ Private method. No other function than updateGui or __call__ needs this function """
-        print('STOP')
-        pass
+        print("EMERGENCY")
+        self.SC.EMERGENCY()
 
     def __close_popup(self) -> None:
         pygame_widgets.WidgetHandler.removeWidget(self.drone_name)

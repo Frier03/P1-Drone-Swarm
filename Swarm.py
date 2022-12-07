@@ -8,13 +8,15 @@ class MissionStatus(enum.Enum):
     Idle = 0
     Debug = 1
     Emergency = 2
-    Test = 3
+    Swap = 3
+    RandomPad = 4
 
 
 class Swarm:
     drones: list[Drone] = []
     old_drones = []
     status = MissionStatus.Idle
+    droneTargets = {}
 
     def __init__(self, macs=["FF-FF-FF-FF-FF"], offset=50, distanceBetweenPads=57):
         for mac in macs:
@@ -73,12 +75,14 @@ class Swarm:
 
 
     def startMission(self, type):
+        self.droneTargets = {}
         for drone in self.drones:
             drone.reset()
         
-
         if type == "Swap":
-            self.status = MissionStatus.Test
+            self.status = MissionStatus.Swap
+        elif type == "Random Pad":
+            self.status = MissionStatus.RandomPad
 
         
 
@@ -121,6 +125,7 @@ class Swarm:
 
 
     def controller(self):       #THREAD
+
         while True:
             if self.status == MissionStatus.Idle:
                 pass
@@ -131,33 +136,49 @@ class Swarm:
                     drone.dji.emergency()
                 self.status = MissionStatus.Idle
 
-            elif self.status == MissionStatus.Debug:
 
+            elif self.status == MissionStatus.Debug:
                 for drone in self.drones:
                     print(f"{drone.mac} {drone.battery} {drone.abs_x:2} {drone.abs_y:2} |", end="")
                 print("")
-            
 
 
 
-
-            elif self.status == MissionStatus.Test:
+            elif self.status == MissionStatus.Swap or self.status == MissionStatus.RandomPad:
                 activeDrones = 0
 
+                #GENERATE TARGETS
+                if len(self.droneTargets) == 0:             #If no targets found, generate random pad as target
+                    if self.status == MissionStatus.RandomPad:
+                        for drone in self.drones:
+                            r = -1
+                            while r == -1 or r in self.droneTargets.values() or r == drone.lastSeenPad:      #Generate a random position
+                                r = random.randint(1, 9)
+                            self.droneTargets[drone.mac] = r
+                    if self.status == MissionStatus.Swap:
+                        pass
+                    
+                        
+                #DRONE LOOP LOGIC
                 for drone in self.drones:
-                    print(f"\n{drone.mac[-2:]} | {drone.battery}%  STAGE: {drone.stage}  Route: {drone.route} MID: {drone.mID}")
                     if drone.stage == drone.FlyingStage.Idle:
                         drone.shouldTakeoff = True
                         print("TAKEOFF")
+                    
                     elif drone.stage == drone.FlyingStage.MissionActive:
-                        if "F6" in drone.mac: target = 7
-                        if "C6" in drone.mac: target = 8
+                        
                         disabledSpots = []
                         for d in self.drones:
-                            if drone.mac != d.mac:
+                            if drone.mac != d.mac:          #All other drones than "drone"
                                 disabledSpots.append(d.nextPad)
                                 disabledSpots.append(d.lastSeenPad)
 
+                                #Emergency
+                                if drone.mID == d.mID:
+                                    drone.dji.emergency()
+                            
+
+                        target = self.droneTargets[drone.mac]
                         drone.route = self.CalcRoute(drone.mID, target, disabledSpots)
 
                         if drone.isCenter():
@@ -172,10 +193,14 @@ class Swarm:
                                     #print("Route:", drone.route, "Next pad =", drone.route[0][1])
                                     drone.nextPad = drone.route[0][1]
                             else: drone.nextPad = drone.mID
+                    
+
+
                     elif drone.stage == drone.FlyingStage.MissionDone:
                         activeDrones += 1
-                    else: print("WTF")
+                    
                 
+                    print(f"\n{drone.mac[-2:]} | {drone.battery}%  STAGE: {drone.stage}  Route: {drone.route} MID: {drone.mID}")
                 
                 
                 if activeDrones == len(self.drones):
@@ -190,11 +215,11 @@ class Swarm:
 
 
 if __name__ == "__main__":
-    SC = Swarm(["F6"])
+    SC = Swarm(["F6", "D8"])
 
     #print(SC.CalcRoute(1, 8, [8]) )
 
-    SC.updateConnections( [("192.168.137.241", "F6"), ("192.168.137.232", "C6")] )     #
+    SC.updateConnections( [("192.168.137.66", "D8"), ("192.168.137.12", "F6")] )     #
 
     SC.status = MissionStatus.Debug
 
