@@ -1,8 +1,13 @@
 # P1 Robot Swarm
 P1 Project - Comtek 154 - C2-207 - 2022
 
-## Description
 
+## To-do list
+* Add button (Scan for drones)
+* Add emergency when drones are too close
+
+
+## Description
 A project which attempts to control multiple Tello EDU drones by tracking their location and plotting it in a GUI
 
 
