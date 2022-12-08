@@ -3,6 +3,7 @@ from time import sleep
 from threading import Thread
 import enum
 import random
+import math
 
 class MissionStatus(enum.Enum):
     Idle = 0
@@ -85,7 +86,6 @@ class Swarm:
             self.status = MissionStatus.RandomPad
 
         
-
     def EMERGENCY(self):
         self.status = MissionStatus.Emergency
 
@@ -133,14 +133,25 @@ class Swarm:
             
             if self.status == MissionStatus.Emergency:
                 for drone in self.drones:
-                    drone.dji.emergency()
+                    print(drone.mac, "DOING EMERGENCY!!!!")
+                    drone.stage = drone.FlyingStage.Idle
+                    try:    drone.dji.emergency()
+                    except: print('Exception emergency')
                 self.status = MissionStatus.Idle
+                
 
 
             elif self.status == MissionStatus.Debug:
                 for drone in self.drones:
-                    print(f"{drone.mac} {drone.battery} {drone.abs_x:2} {drone.abs_y:2} |", end="")
-                print("")
+                    print(f"{drone.mac} {drone.battery} {drone.abs_x:2} {drone.abs_y:2} |")
+
+                    #Print distance to other drones. Used in detecting emergency
+                    for d in self.drones:
+                        if drone.mac != d.mac:    #All other drones
+                            x, y, z = (drone.abs_x - d.abs_x, drone.abs_y - d.abs_y, drone.abs_z - d.abs_z)
+                            dist = math.sqrt(x**2 + y**2 + z**2)
+                            print(f"{drone.mac[-2:]}  {dist}  {d.mac[-2:]}")
+                    print("")
 
 
 
@@ -153,7 +164,7 @@ class Swarm:
                         for drone in self.drones:
                             r = -1
                             while r == -1 or r in self.droneTargets.values() or r == drone.lastSeenPad:      #Generate a random position
-                                r = random.randint(1, 9)
+                                r = random.randint(1, 8)
                             self.droneTargets[drone.mac] = r
                     if self.status == MissionStatus.Swap:
                         pass
@@ -174,8 +185,11 @@ class Swarm:
                                 disabledSpots.append(d.lastSeenPad)
 
                                 #Emergency
-                                if drone.mID == d.mID:
-                                    drone.dji.emergency()
+                                x, y, z = (drone.abs_x - d.abs_x, drone.abs_y - d.abs_y, drone.abs_z - d.abs_z)
+                                dist = math.sqrt(x**2 + y**2 + z**2)
+                                print(dist)
+                                if drone.mID == d.mID or dist < 40:
+                                    self.status = MissionStatus.Emergency
                             
 
                         target = self.droneTargets[drone.mac]
@@ -215,11 +229,11 @@ class Swarm:
 
 
 if __name__ == "__main__":
-    SC = Swarm(["F6", "D8"])
+    SC = Swarm(["F6", "C6"])
 
     #print(SC.CalcRoute(1, 8, [8]) )
 
-    SC.updateConnections( [("192.168.137.66", "D8"), ("192.168.137.12", "F6")] )     #
+    SC.updateConnections( [("192.168.137.229", "C6"), ("192.168.137.139", "F6")] )
 
     SC.status = MissionStatus.Debug
 
