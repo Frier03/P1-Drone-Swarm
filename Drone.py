@@ -60,7 +60,7 @@ class Drone():
         T.start()
 
         #Start mover thread
-        TPad = Thread(target=self.padder)
+        TPad = Thread(target=self.mover)
         TPad.daemon = True
         TPad.start()
 
@@ -155,7 +155,7 @@ class Drone():
         self.isMoving = False
 
 
-    def padder(self):
+    def mover(self):
         while True:
             if self.shouldTakeoff == True:
                 try:
