@@ -3,7 +3,7 @@ P1 Project - Comtek 154 - C2-207 - 2022
 
 
 ## To-do list
-- [ ] Add button (Scan for drones)
+- [x] Add button (Scan for drones)
 - [x] Add emergency when drones are too close
 
 

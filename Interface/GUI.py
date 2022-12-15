@@ -68,15 +68,18 @@ class Gui:
 
         # Add Connect to All Drones Button
         self.connectall_button = self.__add_button(value='Connect to All', x=100, y=self.__adapter_y, w=150, h=30, execfunction=self.__connnect_to_all_event)
+        
+        # Add scan for drones button
+        self.scan_button = self.__add_button(value="SCAN", x=100, y=self.__adapter_y+50, w=150, h=30, execfunction=self.__scan_event)
 
         # Add Custom Adapter Title
-        self.__add_text(value='Available Missions', x=100,y=self.__adapter_y+75, bold=True, fontsize=25)
+        self.__add_text(value='Available Missions', x=100,y=self.__adapter_y+100, bold=True, fontsize=25)
         
         # Add Swap Drones Button
-        self.mission_button = self.__add_button(value='Swap', x=100, y=self.__adapter_y+125, w=150, h=30, execfunction=self.__mission_event, execfunctionParams='Swap')
+        self.mission_button = self.__add_button(value='Swap', x=100, y=self.__adapter_y+150, w=150, h=30, execfunction=self.__mission_event, execfunctionParams='Swap')
 
         # Add  Random Pad Button
-        self.mission_button = self.__add_button(value='Random Pad', x=100, y=self.__adapter_y+175, w=150, h=30, execfunction=self.__mission_event, execfunctionParams='Random Pad')
+        self.mission_button = self.__add_button(value='Random Pad', x=100, y=self.__adapter_y+200, w=150, h=30, execfunction=self.__mission_event, execfunctionParams='Random Pad')
                 
         # Add Stop Button
         self.stop_button = self.__add_button(value='STOP', x=100, y=700, execfunction=self.__stop_event, radius=20, shadowColour=(230, 158, 159), inactiveColour=(239, 142, 143), pressedColour=(207, 117, 118), hoverColour=(245, 125, 126))
@@ -371,6 +374,11 @@ class Gui:
         """ Private method. No other function than updateGui or __call__ needs this function """
         print("EMERGENCY")
         self.SC.EMERGENCY()
+
+    def __scan_event(self, *args) -> None:
+        print(self.DC.findDrones())
+
+
 
     def __close_popup(self) -> None:
         pygame_widgets.WidgetHandler.removeWidget(self.drone_name)
