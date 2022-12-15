@@ -167,7 +167,9 @@ class Swarm:
                                 r = random.randint(1, 8)
                             self.droneTargets[drone.mac] = r
                     if self.status == MissionStatus.Swap:
-                        pass
+                        for drone in self.drones:
+                            if "C6" in drone.mac: self.droneTargets[drone.mac] = 7
+                            if "F6" in drone.mac: self.droneTargets[drone.mac] = 3
                     
                         
                 #DRONE LOOP LOGIC
