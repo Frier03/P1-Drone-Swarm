@@ -1,6 +1,9 @@
 # P1 Robot Swarm
 P1 Project - Comtek 154 - C2-207 - 2022
 
+<p align="center">
+  <img src="https://media.giphy.com/media/wGlcfMRdQX9YDKCfbd/giphy.gif" alt="animated" />
+</p>
 
 ## To-do list
 - [x] Add button (Scan for drones)
