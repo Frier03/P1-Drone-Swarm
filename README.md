@@ -5,6 +5,10 @@ P1 Project - Comtek 154 - C2-207 - 2022
   <img src="https://media.giphy.com/media/wGlcfMRdQX9YDKCfbd/giphy.gif" alt="animated" />
 </p>
 
+
+- [Tello Flight](https://www.youtube.com/watch?v=x40ADS2neLY)
+- [Tello Calibration](https://www.youtube.com/shorts/KRmLvYZPe4E)
+
 ## To-do list
 - [x] Add button (Scan for drones)
 - [x] Add emergency when drones are too close
