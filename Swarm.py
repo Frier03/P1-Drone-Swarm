@@ -189,8 +189,8 @@ class Swarm:
                                 #Emergency
                                 x, y, z = (drone.abs_x - d.abs_x, drone.abs_y - d.abs_y, drone.abs_z - d.abs_z)
                                 dist = math.sqrt(x**2 + y**2 + z**2)
-                                print(dist)
-                                if drone.mID == d.mID or dist < 40:
+                                #print(dist)
+                                if (drone.mID == d.mID and drone.mID != -1) or dist < 40:
                                     self.status = MissionStatus.Emergency
                             
 
@@ -235,9 +235,11 @@ if __name__ == "__main__":
 
     #print(SC.CalcRoute(1, 8, [8]) )
 
-    SC.updateConnections( [("192.168.137.229", "C6"), ("192.168.137.139", "F6")] )
+    #SC.updateConnections( [("192.168.137.229", "C6"), ("192.168.137.139", "F6")] )
 
-    SC.status = MissionStatus.Debug
+    print(f"drone.route={SC.CalcRoute(1, 6, [5])} ")
+
+    #SC.status = MissionStatus.Debug
 
     sleep(999)
 
