@@ -1,4 +1,4 @@
-# P1 Robot Swarm
+# P1 Robot Swarm (Grade: A)
 P1 Project - Comtek 154 - C2-207 - 2022
 
 <p align="center">
